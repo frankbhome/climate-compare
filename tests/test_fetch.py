@@ -1,9 +1,9 @@
 # tests/test_fetch.py
 
-import pytest
+from datetime import datetime
 from unittest.mock import patch
 import pandas as pd
-
+from src.fetch import get_historical_weather
 
 def test_get_historical_weather_returns_dataframe():
     """Verify that get_historical_weather returns a non-empty DataFrame with temperature data."""
