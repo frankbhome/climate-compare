@@ -21,3 +21,9 @@ def test_get_historical_weather_returns_dataframe():
     with patch('src.fetch.Daily') as mock_daily:
         mock_daily.return_value.fetch.return_value = mock_df
         df = get_historical_weather(lat, lon, start, end)
+        # Assert the returned DataFrame matches the mock
+        pd.testing.assert_frame_equal(df, mock_df)
+        # Assert fetch was called once
+        mock_daily.return_value.fetch.assert_called_once_with()
+        # Assert Daily was called with correct parameters
+        mock_daily.assert_called_once_with(lat, lon, start, end)
