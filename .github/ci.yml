@@ -1,0 +1,71 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    workflow_dispatch:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, 3.10, 3.11]
+    steps:
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: ⚡️ Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/requirements-dev.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: ⚫ Black - Code Formatter
+        run: |
+          source .venv/bin/activate
+          black --check .
+
+      - name: 🧹 isort - Import Order
+        run: |
+          source .venv/bin/activate
+          isort . --check-only
+
+      - name: 🔍 Flake8 - Linting
+        run: |
+          source .venv/bin/activate
+          flake8 .
+
+      - name: 🧪 Pytest - Unit Tests
+        run: |
+          source .venv/bin/activate
+          pytest --cov=src --cov-report=xml tests/
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.xml
+
+      - name: 🔍 mypy - Type Checking
+        run: |
+          source .venv/bin/activate
+          mypy src/
+
+      - name: 🔒 Bandit - Security Scan
+        run: |
+          source .venv/bin/activate
+          bandit -r src/ -x tests/
