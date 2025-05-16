@@ -1,13 +1,10 @@
 from datetime import datetime
 from functools import lru_cache
-
 from meteostat import Point, Daily
-from datetime import datetime
-
-from typing import Union, Optional
+from typing import Optional
 import pandas as pd
-from datetime import datetime
 
+@lru_cache(maxsize=128)
 def get_historical_weather(
     lat: float,
     lon: float,
