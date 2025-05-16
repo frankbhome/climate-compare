@@ -1,0 +1,20 @@
+# Core libraries
+pandas
+requests
+plotly
+meteostat
+
+# App interface (optional, choose one)
+streamlit
+# flask  # Use this instead if you prefer Flask for web apps
+
+# Dev tools
+black
+flake8
+isort
+mypy
+bandit
+pytest
+
+# Jupyter notebooks (optional, for exploration)
+notebook
