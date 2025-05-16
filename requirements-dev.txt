@@ -1,0 +1,7 @@
+# Dev tools
+black
+flake8
+isort
+mypy
+bandit
+pytest
