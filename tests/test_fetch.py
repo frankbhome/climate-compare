@@ -6,7 +6,11 @@ import pandas as pd
 from src.fetch import get_historical_weather
 
 def test_get_historical_weather_returns_dataframe():
-    """Verify that get_historical_weather returns a non-empty DataFrame with temperature data."""
+    """
+    Tests that get_historical_weather returns the expected DataFrame with temperature data for a given location and date range.
+    
+    This test mocks the Daily class to ensure get_historical_weather interacts correctly with it and returns the correct DataFrame.
+    """
     lat = 55.9533  # Edinburgh
     lon = -3.1883
     start = datetime(2023, 1, 1)
