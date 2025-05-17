@@ -9,6 +9,7 @@ numpy==1.24.4
 
 # App interface (optional, choose one)
 streamlit==1.24.0  # Use this for Streamlit apps
+plotly==5.18.0  # Use this for Plotly Dash apps
 # dash  # Use this instead if you prefer Dash for web apps
 # flask  # Use this instead if you prefer Flask for web apps
 
