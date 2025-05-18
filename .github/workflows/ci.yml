@@ -38,15 +38,21 @@ jobs:
           source .venv/bin/activate
           black . --check
 
-      - name: 🧹 Check import order with isort
-        run: isort . --check-only
+      - name: Run isort
+        run: |
+          source .venv/bin/activate
+          isort . --check-only
 
-      - name: 🔍 Lint with flake8
-        run: flake8 .
+      - name: Run flake8
+        run: |
+          source .venv/bin/activate
+          flake8 .
 
-      - name: 🧪 Run tests with pytest
-        run: pytest --cov=src
-
+      - name: Run pytest
+        run: |
+          source .venv/bin/activate
+          pytest --cov=src
+      
       - name: 📊 Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -56,7 +62,11 @@ jobs:
           fail_ci_if_error: true
 
       - name: 📐 Type check with mypy
-        run: mypy src/ --strict
+        run: 
+          source .venv/bin/activate
+          mypy src/ --strict
 
       - name: 🔒 Security check with bandit
-        run: bandit -r src/ -x tests/
+        run: 
+          source .venv/bin/activate
+          bandit -r src/ -x tests/
