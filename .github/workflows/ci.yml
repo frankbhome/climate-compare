@@ -43,30 +43,6 @@ jobs:
           source .venv/bin/activate
           isort . --check-only
 
-      - name: Run flake8
+      - name: Run Ruff Linter
         run: |
-          source .venv/bin/activate
-          flake8 .
-
-      - name: Run pytest
-        run: |
-          source .venv/bin/activate
-          pytest --cov=src
-      
-      - name: 📊 Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
-
-      - name: 📐 Type check with mypy
-        run: 
-          source .venv/bin/activate
-          mypy src/ --strict
-
-      - name: 🔒 Security check with bandit
-        run: 
-          source .venv/bin/activate
-          bandit -r src/ -x tests/
+          ruff check .

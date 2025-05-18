@@ -32,14 +32,14 @@ def get_user_inputs():
         value=55.9533,
         min_value=-90.0,
         max_value=90.0,
-        help="Latitude coordinate (-90 to 90). Default: Edinburgh, Scotland",
+        help=("Latitude coordinate (-90 to 90). Default: Edinburgh, Scotland"),
     )
     lon = st.number_input(
         "Longitude",
         value=-3.1883,
         min_value=-180.0,
         max_value=180.0,
-        help="Longitude coordinate (-180 to 180). Default: Edinburgh, Scotland",
+        help=("Longitude coordinate (-180 to 180). Default: Edinburgh, Scotland"),
     )
     from datetime import date
 
@@ -52,7 +52,8 @@ def get_user_inputs():
     # Warn if date range is too large
     if date_range > 30:
         st.warning(
-            f"Selected date range is {date_range} days. Large date ranges may result in slower performance."
+            f"Selected date range is {date_range} days. "
+            "Large date ranges may result in slower performance."
         )
     # Validate date range
     if end_date < start_date:
@@ -125,7 +126,8 @@ def visualize_weather_data(data):
     # Check for missing values in the selected metric
     if data[selected_metric].isna().any():
         st.warning(
-            f"Selected metric '{selected_metric}' contains missing values which may affect visualization."
+            f"Selected metric '{selected_metric}' contains missing values "
+            "which may affect visualization."
         )
 
     fig = px.line(

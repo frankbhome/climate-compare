@@ -11,8 +11,21 @@ def get_historical_weather(
     lat: float, lon: float, start: datetime, end: datetime
 ) -> Optional[pd.DataFrame]:
     """
-    Fetch historical weather data for the given latitude, longitude, and date range.
-    Returns a pandas DataFrame or None if fetching fails.
+    Fetch historical daily weather data for a given location and date range.
+
+    Parameters:
+        lat (float): Latitude of the location.
+        lon (float): Longitude of the location.
+        start (datetime): Start date (inclusive).
+        end (datetime): End date (inclusive).
+
+    Returns:
+        pd.DataFrame: DataFrame containing daily weather data for the specified
+            location and date range.
+
+    Raises:
+        ValueError: If input types are incorrect or start > end.
+        RuntimeError: If data fetching fails due to API or network errors.
     """
     try:
         location = Point(lat, lon)
