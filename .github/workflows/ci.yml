@@ -27,31 +27,27 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: ⚫ Check formatting with black
-        run: |
-          source .venv/bin/activate
-          black . --check
+        run: black . --check
 
       - name: 🧹 Check import order with isort
-        run: |
-          source .venv/bin/activate
-          isort . --check-only
+        run: isort . --check-only
 
       - name: 🔍 Lint with flake8
-        run: |
-          source .venv/bin/activate
-          flake8 .
+        run: flake8 .
 
       - name: 🧪 Run tests with pytest
-        run: |
-          source .venv/bin/activate
-          pytest
+        run: pytest --cov=src
+
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
 
       - name: 📐 Type check with mypy
-        run: |
-          source .venv/bin/activate
-          mypy src/
+        run: mypy src/ --strict
 
       - name: 🔒 Security check with bandit
-        run: |
-          source .venv/bin/activate
-          bandit -r src/ -x tests/
+        run: bandit -r src/ -x tests/
