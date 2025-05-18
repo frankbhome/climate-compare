@@ -2,6 +2,7 @@
 
 from streamlit.testing.v1 import AppTest
 
+
 def test_ui_renders_and_fetches_data():
     at = AppTest.from_file("src/streamlit_app.py")
 
@@ -18,4 +19,6 @@ def test_ui_renders_and_fetches_data():
     at.run()
 
     # Assertions
-    assert at.success[0].value.startswith("Found") or at.warning, "Should return data or show warning"
+    assert (
+        at.success[0].value.startswith("Found") or at.warning
+    ), "Should return data or show warning"
