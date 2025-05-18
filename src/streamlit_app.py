@@ -1,9 +1,9 @@
 # Standard library imports
 from datetime import datetime
 
+import plotly.express as px
 # Third-party imports
 import streamlit as st
-import plotly.express as px
 
 # Local application imports
 from src.fetch import get_historical_weather

@@ -2,7 +2,9 @@
 
 from datetime import datetime
 from unittest.mock import patch
+
 import pandas as pd
+
 from src.fetch import get_historical_weather
 
 
