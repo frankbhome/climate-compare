@@ -22,4 +22,3 @@ def get_historical_weather(
     except Exception as e:
         print(f"Error fetching weather data: {e}")
         return None
-
