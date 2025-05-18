@@ -32,8 +32,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: ⚫ Check formatting with black
-        run: black . --check
+
+      - name: Run Black check
+        run: |
+          source .venv/bin/activate
+          black . --check
 
       - name: 🧹 Check import order with isort
         run: isort . --check-only
