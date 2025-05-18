@@ -93,35 +93,33 @@ def visualize_weather_data(data):
         if metric_columns and "tavg" in metric_columns:
             default_index = metric_columns.index("tavg")
         
-        selected_metric = st.selectbox(
-            "Select metric to plot:",
-            metric_columns,
-if len(metric_columns) > 0:
-        # Previous code...
-        # Ensure data is properly formatted
-        if not data.index.is_all_dates:
-            st.warning("Data index is not in datetime format. Visualization may not be accurate.")
-        
-        # Check for missing values in the selected metric
-        if data[selected_metric].isna().any():
-            st.warning(f"Selected metric '{selected_metric}' contains missing values which may affect visualization.")
-        
-        fig = px.line(
-            data,
-            x=data.index,
-            y=selected_metric,
-            title=f"Daily {selected_metric} over Time",
-            labels={selected_metric: selected_metric.replace('_', ' ').title(), "x": "Date"},
-            markers=True
-        )
-        fig.update_layout(
-            xaxis_title="Date",
-            yaxis_title=selected_metric.replace('_', ' ').title(),
-            hovermode="x unified"
-        )
-        st.plotly_chart(fig)
-    else:
-        st.info("No weather metrics available to plot.")
+    selected_metric = st.selectbox(
+        "Select metric to plot:",
+        metric_columns,
+        index=default_index
+    )
 
+    # Ensure data is properly formatted
+    if not data.index.is_all_dates:
+        st.warning("Data index is not in datetime format. Visualization may not be accurate.")
+    
+    # Check for missing values in the selected metric
+    if data[selected_metric].isna().any():
+        st.warning(f"Selected metric '{selected_metric}' contains missing values which may affect visualization.")
+    
+    fig = px.line(
+        data,
+        x=data.index,
+        y=selected_metric,
+        title=f"Daily {selected_metric} over Time",
+        labels={selected_metric: selected_metric.replace('_', ' ').title(), "x": "Date"},
+        markers=True
+    )
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis_title=selected_metric.replace('_', ' ').title(),
+        hovermode="x unified"
+    )
+    st.plotly_chart(fig)
 if __name__ == "__main__":
     main()
