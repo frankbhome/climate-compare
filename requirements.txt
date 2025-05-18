@@ -1,17 +1,13 @@
 # Core libraries
-pandas==2.0.3
+pandas>=2.1.0
 requests==2.31.0
 plotly==5.18.0
 meteostat==1.6.5
 
 # Data processing and analysis
-numpy==1.24.4
+numpy>=1.26.0
 
 # App interface (optional, choose one)
 streamlit==1.24.0  # Use this for Streamlit apps
 # dash  # Use this instead if you prefer Dash for web apps
 # flask  # Use this instead if you prefer Flask for web apps
-
-# Jupyter notebooks (optional, for exploration)
-notebook==6.5.4
-jupyterlab==3.6.3
