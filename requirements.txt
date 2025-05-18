@@ -1,11 +1,11 @@
 # Core libraries
-pandas>=2.1.0
+pandas>=2.1.0,<3.0.0
 requests==2.31.0
 plotly==5.18.0
 meteostat==1.6.5
 
 # Data processing and analysis
-numpy>=1.26.0
+numpy>=1.26.0,<2.0.0
 
 # App interface (optional, choose one)
 streamlit==1.24.0  # Use this for Streamlit apps

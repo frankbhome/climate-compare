@@ -97,10 +97,8 @@ def fetch_weather_data(inputs):
         st.error(
             "Request timed out. Please try again or check your internet connection."
         )
-        return None
     except Exception as e:
         st.error(f"Error fetching data: {str(e)}")
-        return None
         return None
 
 
