@@ -1,0 +1,11 @@
+{
+    "json.schemas": [
+        // ...existing schema configs if any...
+    ],
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": false,
+    "python.linting.pylintEnabled": false,
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "python.envFile": "${workspaceFolder}/.env"
+}
