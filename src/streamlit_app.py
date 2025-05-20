@@ -1,3 +1,9 @@
+# Adjust sys.path for interactive Streamlit runs
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 # Standard library imports
 from datetime import datetime
 
@@ -7,19 +13,27 @@ import plotly.express as px
 import streamlit as st
 
 # Local application imports
-from src.fetch import get_historical_weather
+from fetch import get_historical_weather
 
 
-def main():
-    """Run the Streamlit application."""
+def main(test_inputs=None):
+    """
+    Run the Streamlit application.
+    If test_inputs is provided, use those instead of user input widgets
+    (for headless/test mode).
+    """
     setup_page()
-    user_inputs = get_user_inputs()
-    handle_data_fetching(user_inputs)
+    if test_inputs is not None:
+        # Use provided test inputs directly (for headless/test mode)
+        handle_data_fetching(test_inputs)
+    else:
+        # Use the widget-based user input function
+        inputs = get_user_inputs()
+        handle_data_fetching(inputs)
 
 
 def setup_page():
     """Setup the page title and description."""
-    # --- Page title ---
     st.title("🌦️ Climate Compare")
     st.subheader("Visualize and compare historical weather data")
 
@@ -65,20 +79,37 @@ def get_user_inputs():
 
 def handle_data_fetching(inputs):
     """Handle data fetching and visualization."""
-    # --- Button ---
-    if st.button("Fetch and Plot Weather Data"):
-        with st.spinner("Fetching data..."):
-            data = fetch_weather_data(inputs)
-            if data is None:
-                return
+    # Debug: log when this function is called
+    import os
 
-        if data.empty:
-            st.warning("No data found for the selected location or date range.")
+    with open("app_debug.log", "a", encoding="utf-8") as f:
+        f.write(f"handle_data_fetching called with: {inputs}\n")
+    # In test mode, always fetch data (no button)
+    if os.environ.get("STREAMLIT_HEADLESS") == "1":
+        # Headless/test mode: always fetch
+        data = fetch_weather_data(inputs)
+        if data is None:
+            return
+        if hasattr(data, "empty") and data.empty:
+            with open("app_debug.log", "a", encoding="utf-8") as f:
+                f.write("No data found for the selected location or date range.\n")
         else:
-            st.success(f"Found {len(data)} days of data.")
-            st.dataframe(data)
-
-            visualize_weather_data(data)
+            with open("app_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"Found {len(data)} days of data.\n")
+    else:
+        # Only run the button logic if not in headless mode
+        if hasattr(st, "button"):
+            if st.button("Fetch and Plot Weather Data"):
+                with st.spinner("Fetching data..."):
+                    data = fetch_weather_data(inputs)
+                    if data is None:
+                        return
+                if data.empty:
+                    st.warning("No data found for the selected location or date range.")
+                else:
+                    st.success(f"Found {len(data)} days of data.")
+                    st.dataframe(data)
+                    visualize_weather_data(data)
 
 
 def fetch_weather_data(inputs):
@@ -87,20 +118,35 @@ def fetch_weather_data(inputs):
     Uses a timeout parameter to prevent the request from hanging indefinitely.
     """
     try:
+        # Debug: log input parameters
+        with open("app_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"fetch_weather_data called with: {inputs}\n")
         data = get_historical_weather(
             inputs["lat"],
             inputs["lon"],
             datetime.combine(inputs["start_date"], datetime.min.time()),
             datetime.combine(inputs["end_date"], datetime.min.time()),
-            timeout=5,  # seconds
         )
+        # Debug: log data shape/info
+        with open("app_debug.log", "a", encoding="utf-8") as f:
+            if data is not None:
+                f.write(f"Fetched data shape: {getattr(data, 'shape', None)}\n")
+                f.write(f"Fetched data head: {getattr(data, 'head', lambda: None)()}\n")
+            else:
+                f.write("Fetched data is None\n")
         return data
     except TimeoutError:
         st.error(
             "Request timed out. Please try again or check your internet connection."
         )
+        # Debug: log timeout
+        with open("app_debug.log", "a", encoding="utf-8") as f:
+            f.write("TimeoutError occurred in fetch_weather_data\n")
     except Exception as e:
         st.error(f"Error fetching data: {str(e)}")
+        # Debug: log exception
+        with open("app_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"Exception in fetch_weather_data: {e}\n")
         return None
 
 
