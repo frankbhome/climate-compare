@@ -173,6 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+#debug files
+app_debug.log
+ui_test_debug.log
+
 .venv/
 __pycache__/
 .mypy_cache/
@@ -180,4 +184,5 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
 
