@@ -18,9 +18,9 @@ from fetch import get_historical_weather
 
 def main(test_inputs=None):
     """
-    Run the Streamlit application.
-    If test_inputs is provided, use those instead of user input widgets
-    (for headless/test mode).
+    Runs the Climate Compare Streamlit application.
+    
+    If test_inputs is provided, the app operates in headless or test mode using those inputs directly; otherwise, it collects user inputs interactively.
     """
     setup_page()
     if test_inputs is not None:
@@ -33,7 +33,9 @@ def main(test_inputs=None):
 
 
 def setup_page():
-    """Setup the page title and description."""
+    """
+    Configures the Streamlit page with the app title and subtitle.
+    """
     st.title("🌦️ Climate Compare")
     st.subheader("Visualize and compare historical weather data")
 
@@ -78,7 +80,11 @@ def get_user_inputs():
 
 
 def handle_data_fetching(inputs):
-    """Handle data fetching and visualization."""
+    """
+    Fetches weather data based on user or test inputs and manages its visualization.
+    
+    In headless or test mode, data is fetched and logged without user interaction. In interactive mode, data fetching and visualization are triggered by a button press. Displays warnings or success messages based on data availability.
+    """
     # Debug: log when this function is called
     import os
 
@@ -113,9 +119,10 @@ def handle_data_fetching(inputs):
 
 
 def fetch_weather_data(inputs):
-    """Fetch weather data with error handling.
-
-    Uses a timeout parameter to prevent the request from hanging indefinitely.
+    """
+    Fetches historical weather data for the specified location and date range with error handling.
+    
+    Attempts to retrieve weather data using the provided latitude, longitude, and date range. Handles timeouts and other exceptions by displaying error messages and logging details. Returns the fetched data or None if an error occurs.
     """
     try:
         # Debug: log input parameters
