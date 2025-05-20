@@ -20,7 +20,8 @@ def main(test_inputs=None):
     """
     Runs the Climate Compare Streamlit application.
     
-    If test_inputs is provided, the app operates in headless or test mode using those inputs directly; otherwise, it collects user inputs interactively.
+    If test_inputs is provided, the app operates in headless or test mode using those inputs directly; 
+    otherwise, it collects user inputs interactively.
     """
     setup_page()
     if test_inputs is not None:
@@ -83,7 +84,9 @@ def handle_data_fetching(inputs):
     """
     Fetches weather data based on user or test inputs and manages its visualization.
     
-    In headless or test mode, data is fetched and logged without user interaction. In interactive mode, data fetching and visualization are triggered by a button press. Displays warnings or success messages based on data availability.
+    In headless or test mode, data is fetched and logged without user interaction.
+    In interactive mode, data fetching and visualization are triggered by a button press.
+    Displays warnings or success messages based on data availability.
     """
     # Debug: log when this function is called
     import os
@@ -122,7 +125,9 @@ def fetch_weather_data(inputs):
     """
     Fetches historical weather data for the specified location and date range with error handling.
     
-    Attempts to retrieve weather data using the provided latitude, longitude, and date range. Handles timeouts and other exceptions by displaying error messages and logging details. Returns the fetched data or None if an error occurs.
+    Attempts to retrieve weather data using the provided latitude, longitude, and date range.
+    Handles timeouts and other exceptions by displaying error messages and logging details.
+    Returns the fetched data or None if an error occurs.
     """
     try:
         # Debug: log input parameters
