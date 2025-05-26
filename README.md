@@ -6,4 +6,4 @@
 
 Fetch and visualize weather station data (live + historical) for environmental insight and comparison.
 
-Small test update to prove that JIRA and GitLab are properly integrated and that we can create a pull request that JIRA and GitHub are both aware of.
+Small test update to prove that JIRA and GitHub are properly integrated and that we can create a pull request that JIRA and GitHub are both aware of.
