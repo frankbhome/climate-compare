@@ -27,13 +27,16 @@ jobs:
       run: |
         pytest tests/
 
-    - name: Deploy to EC2
-      if: success()
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: deploy
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          cd /var/www/html
-          git pull https://github.com/frankbhome/climate-compare.git main
+ name: Deploy to EC2
+ if: success()
+ uses: appleboy/ssh-action@v1.0.3
+ with:
+   host: ${{ secrets.EC2_HOST }}
+   username: deploy
+   key: ${{ secrets.EC2_SSH_KEY }}
+   strict_host_key_checking: true
+   known_hosts: ${{ secrets.EC2_KNOWN_HOSTS }}
+   script: |
+     cd /var/www/html
+     git remote set-url origin git@github.com:frankbhome/climate-compare.git
+     git pull origin main
