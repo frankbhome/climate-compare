@@ -1,0 +1,11 @@
+
+@startuml
+title Climate Compare High-Level Flow
+
+actor User
+User -> StreamlitApp : Input lat/lon, dates
+StreamlitApp -> FetchModule : get_historical_weather()
+FetchModule --> StreamlitApp : weather data
+StreamlitApp -> User : display plots
+
+@enduml
