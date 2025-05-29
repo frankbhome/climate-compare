@@ -1,0 +1,56 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        pytest tests/
+
+    - name: Deploy to EC2
+      if: ${{ success() }}
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: deploy
+        key: ${{ secrets.EC2_SSH_KEY }}
+        strict_host_key_checking: true
+        known_hosts: ${{ secrets.EC2_KNOWN_HOSTS }}
+        script_stop: true
+        script: |
+          if [ ! -d /var/www/html/.git ]; then
+            rm -rf /var/www/html/*
+            git clone --depth=1 git@github.com:frankbhome/climate-compare.git /var/www/html
+          else
+            cd /var/www/html
+            git fetch origin main
+            git reset --hard origin/main
+          fi
