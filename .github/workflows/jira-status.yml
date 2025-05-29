@@ -41,9 +41,13 @@ jobs:
 
       - name: Extract JIRA issue key
         id: extract
-        run: |
-          branch_or_pr="${{ github.ref_name }}"
-          issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
+run: |
+  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+    branch_or_pr="${{ github.head_ref }}"
+  else
+    branch_or_pr="${{ github.ref_name }}"
+  fi"
+   issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
 
           if [[ -z "$issue_key" ]]; then
             echo "No JIRA issue key found in branch or PR name. Skipping."
