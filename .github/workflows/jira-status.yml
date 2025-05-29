@@ -1,0 +1,91 @@
+name: Update JIRA Status
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  update-jira:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install requests
+        run: pip install requests
+
+      - name: Determine transition
+        id: determine
+        run: |
+          transition_id=""
+          event="${{ github.event_name }}"
+
+          if [[ "$event" == "push" ]]; then
+            transition_id="21"  # In Progress
+          elif [[ "$event" == "pull_request" && "${{ github.event.action }}" == "opened" ]]; then
+            transition_id="31"  # In Review
+          elif [[ "$event" == "pull_request" && "${{ github.event.action }}" == "closed" && "${{ github.event.pull_request.merged }}" == "true" ]]; then
+            transition_id="41"  # Done
+          fi
+
+          echo "transition_id=$transition_id" >> $GITHUB_OUTPUT
+
+      - name: Extract JIRA issue key
+        id: extract
+        run: |
+          branch_or_pr="${{ github.ref_name }}"
+          issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
+
+          if [[ -z "$issue_key" ]]; then
+            echo "No JIRA issue key found in branch or PR name. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Found JIRA issue key: $issue_key"
+          echo "issue_key=$issue_key" >> $GITHUB_OUTPUT
+
+      - name: Update JIRA issue
+        if: steps.extract.outputs.skip != 'true'
+        run: |
+          python <<EOF
+          import os
+          import requests
+          import json
+
+          jira_user = os.environ['JIRA_USER_EMAIL']
+          jira_token = os.environ['JIRA_API_TOKEN']
+          jira_base = os.environ['JIRA_BASE_URL']
+          issue_key = '${{ steps.extract.outputs.issue_key }}'
+          transition_id = '${{ steps.determine.outputs.transition_id }}'
+
+          if not transition_id:
+              print('No transition needed.')
+              exit(0)
+
+          url = f"{jira_base}/rest/api/3/issue/{issue_key}/transitions"
+          auth = (jira_user, jira_token)
+          headers = {"Accept": "application/json", "Content-Type": "application/json"}
+          payload = json.dumps({"transition": {"id": transition_id}})
+
+          response = requests.post(url, headers=headers, auth=auth, data=payload)
+
+          if response.status_code == 204:
+              print(f"Transitioned {issue_key} successfully to transition ID {transition_id}!")
+          else:
+              print(f"Failed to transition {issue_key}: {response.status_code} {response.text}")
+              exit(1)
+          EOF
+        env:
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
