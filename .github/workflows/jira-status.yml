@@ -61,7 +61,42 @@ jobs:
       - name: Update JIRA issue
         if: steps.extract.outputs.skip != 'true' && steps.determine.outputs.transition_id != ''
         run: |
-          python <<EOF
+          python - <<EOF
+import os
+import requests
+import json
+import sys
+
+jira_user = os.environ['JIRA_USER_EMAIL']
+jira_token = os.environ['JIRA_API_TOKEN']
+jira_base = os.environ['JIRA_BASE_URL']
+issue_key = '${{ steps.extract.outputs.issue_key }}'
+transition_id = '${{ steps.determine.outputs.transition_id }}'
+
+url = f"{jira_base}/rest/api/3/issue/{issue_key}/transitions"
+auth = (jira_user, jira_token)
+headers = {"Accept": "application/json", "Content-Type": "application/json"}
+payload = json.dumps({"transition": {"id": transition_id}})
+
+try:
+    response = requests.post(url, headers=headers, auth=auth, data=payload, timeout=10)
+except Exception as e:
+    print(f"Request to JIRA failed: {e}, skipping transition")
+    sys.exit(0)
+
+if response.status_code == 204:
+    print(f"Transitioned {issue_key} successfully to transition ID {transition_id}!")
+elif response.status_code == 400:
+    print(f"Transition {transition_id} not valid for {issue_key} (likely already in that status), skipping.")
+    sys.exit(0)
+else:
+    print(f"Failed to transition {issue_key}: {response.status_code} {response.text}")
+    sys.exit(1)
+EOF
+        env:
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
  import os
  import requests
  import json
