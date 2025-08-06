@@ -62,8 +62,6 @@ jobs:
         if: steps.extract.outputs.skip != 'true' && steps.determine.outputs.transition_id != ''
         run: |
           python <<EOF
-run: |
-         python <<EOF
  import os
  import requests
  import json
