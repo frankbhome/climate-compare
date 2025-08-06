@@ -149,33 +149,53 @@ def fetch_weather_data(inputs):
             f.write(f"Exception in fetch_weather_data: {e}\n")
         return None
 
-
 def visualize_weather_data(data):
     """Create and display visualizations for weather data."""
+    import streamlit as st
+    import pandas as pd
+    import plotly.express as px
+
     # --- Metric selection widget ---
     metric_columns = [col for col in data.columns if col != "time"]
-    if metric_columns:
-        default_index = 0
-        if metric_columns and "tavg" in metric_columns:
-            default_index = metric_columns.index("tavg")
+    if not metric_columns:
+        st.error("No valid metric columns found in the data.")
+        return
+
+    default_index = 0
+    if "tavg" in metric_columns:
+        default_index = metric_columns.index("tavg")
 
     selected_metric = st.selectbox(
         "Select metric to plot:", metric_columns, index=default_index
     )
 
-    # Ensure data is properly formatted
-    if not data.index.is_all_dates:
-        st.warning(
-            "Data index is not in datetime format. Visualization may not be accurate."
-        )
+    # --- Ensure data index is datetime ---
+    try:
+        data.index = pd.to_datetime(data.index, errors="coerce")
+    except Exception as e:
+        st.error(f"Failed to convert index to datetime: {e}")
+        return
 
-    # Check for missing values in the selected metric
+    if not isinstance(data.index, pd.DatetimeIndex):
+        st.error("Data index is not a DatetimeIndex. Please check input format.")
+        return
+
+    if data.index.hasnans:
+        st.warning("Some rows have invalid timestamps and will be dropped.")
+        data = data[~data.index.isna()]
+
+    if data.empty:
+        st.error("No valid data to display after processing timestamps.")
+        return
+
+    # --- Warn about missing values in selected metric ---
     if data[selected_metric].isna().any():
         st.warning(
             f"Selected metric '{selected_metric}' contains missing values "
             "which may affect visualization."
         )
 
+    # --- Plot the selected metric ---
     fig = px.line(
         data,
         x=data.index,
@@ -193,7 +213,6 @@ def visualize_weather_data(data):
         hovermode="x unified",
     )
     st.plotly_chart(fig)
-
 
 if __name__ == "__main__":
     main()
