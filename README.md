@@ -51,6 +51,46 @@ pytest
 ```
 
 ---
+## 🐳 Running with Docker
+
+You can run the Climate Compare app in a container using Docker.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- (Optional) [Docker Compose](https://docs.docker.com/compose/) if using the compose setup
+
+### 📦 Build and Run (Single Container)
+
+```bash
+docker build -t climate-compare .
+docker run -p 8501:8501 climate-compare
+```
+
+### 📦 Using Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+Then open your browser to: http://localhost:8501
+
+### 🔄 Auto Reloading
+If you're actively developing, the docker-compose.yml mounts your local source code into the container. Just edit files locally and reload the browser.
+
+🧹 Clean Up
+
+```bash
+docker-compose down
+```
+
+Or if you used docker directly:
+
+```bash
+docker ps
+docker stop <container-id>
+```
+---
 
 ## 🧰 Developer Notes
 
@@ -77,10 +117,10 @@ pytest
 
 ## 🔗 GitHub + JIRA Integration
 
-Use JIRA issue keys (e.g., `DOC-101`) in:
-- Branch names: `feature/DOC-101-update-readme`
-- Commits: `Update README.md with setup instructions DOC-101`
-- PR titles: `DOC-101: Update README for project setup`
+Use JIRA issue keys (e.g., `CPG-101`) in:
+- Branch names: `feature/CPG-101`
+- Commits: `CPG-101: Update README.md with setup instructions`
+- PR titles: `CPG-101: Update README for project setup`
 
 This ensures your GitHub activity is linked automatically to JIRA issues.
 
