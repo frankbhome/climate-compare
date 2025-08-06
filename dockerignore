@@ -1,0 +1,43 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+*.log
+*.sqlite3
+.idea/
+.vscode/
+*.db
+*.DS_Store
+
+# Unit-test & type-checking artefacts
+.pytest_cache/
+.mypy_cache/
+.coverage
+
++# Notebook checkpoints
+.ipynb_checkpoints/
+
++# Virtual-env & env files occasionally committed by users
+.venv/
+.env
+
+# tox
+.tox/
