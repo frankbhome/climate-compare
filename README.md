@@ -73,12 +73,12 @@ docker run -p 8501:8501 climate-compare
 docker-compose up --build
 ```
 
-Then open your browser to: http://localhost:8501
+Then open your browser to: <http://localhost:8501>
 
 ### 🔄 Auto Reloading
 If you're actively developing, the docker-compose.yml mounts your local source code into the container. Just edit files locally and reload the browser.
 
-🧹 Clean Up
+### 🧹 Clean Up
 
 ```bash
 docker-compose down
