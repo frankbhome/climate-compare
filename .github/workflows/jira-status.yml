@@ -28,27 +28,32 @@ jobs:
         run: |
           transition_id=""
           event="${{ github.event_name }}"
+          action="${{ github.event.action }}"
+          merged="${{ github.event.pull_request.merged }}"
+          branch="${{ github.ref_name }}"
 
-          if [ "$event" = "push" ]; then
+          if [ "$event" = "push" ] && echo "$branch" | grep -qE '^(feature|bugfix|hotfix)/'; then
             transition_id="21"  # In Progress
-          elif [ "$event" = "pull_request" ] && [ "${{ github.event.action }}" = "opened" ]; then
+          elif [ "$event" = "pull_request" ] && [ "$action" = "opened" ]; then
             transition_id="31"  # In Review
-          elif [ "$event" = "pull_request" ] \
-            && [ "${{ github.event.action }}" = "closed" ] \
-            && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+          elif [ "$event" = "pull_request" ] && [ "$action" = "closed" ] && [ "$merged" = "true" ]; then
             transition_id="41"  # Done
           fi
 
           echo "transition_id=$transition_id" >> $GITHUB_OUTPUT
-
       - name: Extract JIRA issue key
         id: extract
+        env:
+          SAFE_HEAD_REF: ${{ github.head_ref }}
+          SAFE_REF_NAME: ${{ github.ref_name }}
+          SAFE_EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            branch_or_pr="${{ github.head_ref }}"
+          if [ "$SAFE_EVENT_NAME" = "pull_request" ]; then
+            branch_or_pr="$SAFE_HEAD_REF"
           else
-            branch_or_pr="${{ github.ref_name }}"
+            branch_or_pr="$SAFE_REF_NAME"
           fi
+
           issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
 
           if [ -z "$issue_key" ]; then
@@ -59,7 +64,6 @@ jobs:
 
           echo "Found JIRA issue key: $issue_key"
           echo "issue_key=$issue_key" >> $GITHUB_OUTPUT
-
       - name: Update JIRA issue
         if: steps.extract.outputs.skip != 'true' && steps.determine.outputs.transition_id != ''
         run: |
@@ -98,3 +102,4 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+
