@@ -85,7 +85,7 @@ jobs:
 
           if response.status_code == 204:
               print(f"Transitioned {issue_key} successfully to transition ID {transition_id}!")
-          elif response.status_code = 400:
+          elif response.status_code == 400:
               print(f"Transition {transition_id} not valid for {issue_key} (likely already in that status), skipping.")
               sys.exit(0)
           else:
