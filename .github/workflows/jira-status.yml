@@ -25,12 +25,15 @@ jobs:
 
       - name: Determine transition
         id: determine
+        env:
+          SAFE_EVENT_NAME: ${{ github.event_name }}
+          SAFE_REF_NAME: ${{ github.ref_name }}
         run: |
           transition_id=""
-          event="${{ github.event_name }}"
+          event="$SAFE_EVENT_NAME"
+          branch="$SAFE_REF_NAME"
           action="${{ github.event.action }}"
           merged="${{ github.event.pull_request.merged }}"
-          branch="${{ github.ref_name }}"
 
           if [ "$event" = "push" ] && echo "$branch" | grep -qE '^(feature|bugfix|hotfix)/'; then
             transition_id="21"  # In Progress
