@@ -98,20 +98,32 @@ docker stop <container-id>
 
 ## 🧰 Developer Notes
 
-- **Pre-commit hooks (Windows support):**  
-  If you use `pre-commit` with `pytest` and `coverage`, and run Windows with PowerShell, update `.pre-commit-config.yaml` to use:
+- **Pre-commit hooks (cross-platform coverage):**  
+  The pre-commit hook for running `pytest` with `coverage` is now set up using a `local` hook in `.pre-commit-config.yaml` with cross-platform compatibility:
+
   ```yaml
-  entry: ".venv\\Scripts\\coverage.exe run -m pytest"
-  language: system
-  pass_filenames: false
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest with coverage
+        entry: python -m coverage run -m pytest
+        language: system
+        types: [python]
+        pass_filenames: false
   ```
+
   Make sure your virtual environment is activated before committing or running hooks:
-  ```powershell
+
+  ```bash
+  # On WSL or Linux/macOS
+  source .venv/bin/activate
+
+  # On Windows PowerShell
   .\.venv\Scripts\Activate
+
   pre-commit install
   pre-commit run --all-files
   ```
-
 
 - **Testable UI Mode:**  
   You can run the app in non-interactive mode for tests or automation using:
