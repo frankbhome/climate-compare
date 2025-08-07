@@ -1,17 +1,31 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1  # ✅ Verified valid tag
-    hooks:
-      - id: isort
-
- 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2  # check for latest: https://github.com/astral-sh/ruff-pre-commit/releases
-    hooks:
-      - id: ruff
-      - id: ruff-format  # optional if you want black-style formatting
+- repo: https://github.com/psf/black
+  rev: 24.4.2
+  hooks:
+  - id: black
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.4.4
+  hooks:
+  - id: ruff
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.10.0
+  hooks:
+  - id: mypy
+- repo: local
+  hooks:
+  - id: pytest
+    name: Run pytest with coverage
+    entry: '".venv\Scripts\coverage.exe" run -m pytest'
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: pytest-before-push
+    name: Run tests before push
+    entry: bash -c 'coverage run -m pytest && coverage report --fail-under=40'
+    language: system
+    stages:
+    - pre-push
+    types:
+    - python
+    pass_filenames: false

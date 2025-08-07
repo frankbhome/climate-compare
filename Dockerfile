@@ -8,10 +8,13 @@ ENV PYTHONUNBUFFERED=1
 # Set the working directory
 WORKDIR /app
 
+ENV PYTHONPATH=/app
+
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential && \
+    apt-get install -y libjpeg-dev zlib1g-dev build-essential --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
+
 
 # Install Python dependencies
 COPY requirements.txt .

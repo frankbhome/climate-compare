@@ -7,13 +7,11 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 # Standard library imports
 from datetime import datetime
 
-import plotly.express as px
-
 # Third-party imports
 import streamlit as st
 
 # Local application imports
-from fetch import get_historical_weather
+from src.fetch import get_historical_weather
 
 
 def main(test_inputs=None):
@@ -149,11 +147,12 @@ def fetch_weather_data(inputs):
             f.write(f"Exception in fetch_weather_data: {e}\n")
         return None
 
+
 def visualize_weather_data(data):
     """Create and display visualizations for weather data."""
-    import streamlit as st
     import pandas as pd
     import plotly.express as px
+    import streamlit as st
 
     # --- Metric selection widget ---
     metric_columns = [col for col in data.columns if col != "time"]
@@ -213,6 +212,7 @@ def visualize_weather_data(data):
         hovermode="x unified",
     )
     st.plotly_chart(fig)
+
 
 if __name__ == "__main__":
     main()

@@ -2,10 +2,9 @@
 
 [![CI](https://github.com/frankbhome/climate-compare/actions/workflows/ci.yml/badge.svg)](https://github.com/frankbhome/climate-compare/actions/workflows/ci.yml)
 [![Tests](https://github.com/frankbhome/climate-compare/actions/workflows/test.yml/badge.svg)](https://github.com/frankbhome/climate-compare/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/frankbhome/climate-compare/branch/develop/graph/badge.svg)](https://codecov.io/gh/frankbhome/climate-compare)
 
 > Fetch and visualize weather station data (live + historical) for environmental insight and comparison.
-
----
 
 ## 🔍 Project Overview
 
@@ -13,8 +12,6 @@
 - Retrieve historical weather data using the [Meteostat](https://dev.meteostat.net/) API
 - Visualize data using interactive Plotly charts
 - Compare climate patterns over time or location
-
----
 
 ## 🚀 Quick Start
 
@@ -26,6 +23,17 @@ cd climate-compare
 ```
 
 ### 2. Set up Python environment
+
+#### 🔧 Required System Packages (Linux/WSL only)
+
+Before installing Python packages, make sure the following system libraries are installed:
+
+```bash
+sudo apt update
+sudo apt install -y libjpeg-dev zlib1g-dev
+```
+
+These are needed for image processing support via Pillow and other dependencies.
 
 ```bash
 python3 -m venv venv
@@ -39,18 +47,15 @@ pip install -r requirements.txt
 streamlit run src/streamlit_app.py
 ```
 
----
-
 ## 🧪 Run Tests
 
 Tests are written with `pytest`. To run:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 pytest
 ```
 
----
 ## 🐳 Running with Docker
 
 You can run the Climate Compare app in a container using Docker.
@@ -90,9 +95,23 @@ Or if you used docker directly:
 docker ps
 docker stop <container-id>
 ```
----
 
 ## 🧰 Developer Notes
+
+- **Pre-commit hooks (Windows support):**  
+  If you use `pre-commit` with `pytest` and `coverage`, and run Windows with PowerShell, update `.pre-commit-config.yaml` to use:
+  ```yaml
+  entry: ".venv\\Scripts\\coverage.exe run -m pytest"
+  language: system
+  pass_filenames: false
+  ```
+  Make sure your virtual environment is activated before committing or running hooks:
+  ```powershell
+  .\.venv\Scripts\Activate
+  pre-commit install
+  pre-commit run --all-files
+  ```
+
 
 - **Testable UI Mode:**  
   You can run the app in non-interactive mode for tests or automation using:
@@ -113,8 +132,6 @@ docker stop <container-id>
 - **Weather Data Caching:**  
   Historical weather queries are cached using `@lru_cache` for efficiency.
 
----
-
 ## 🔗 GitHub + JIRA Integration
 
 Use JIRA issue keys (e.g., `CPG-101`) in:
@@ -123,8 +140,6 @@ Use JIRA issue keys (e.g., `CPG-101`) in:
 - PR titles: `CPG-101: Update README for project setup`
 
 This ensures your GitHub activity is linked automatically to JIRA issues.
-
----
 
 ## 📁 Project Structure
 
@@ -143,10 +158,31 @@ climate-compare/
 └── README.md                # You are here
 ```
 
----
+## ⚠️Troubleshooting
+
+### 🧰 Pre-commit hook not found?
+
+If you see an error like:
+
+```text
+pre-commit: not found. Did you forget to activate your virtualenv?
+```
+
+You can solve it by installing `pre-commit` globally using [`pipx`](https://pipx.pypa.io/):
+
+```bash
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+# Restart your terminal, then run:
+pipx install pre-commit
+```
+
+This makes `pre-commit` available in all Git environments (e.g. VS Code, GitHub Desktop) without requiring a virtualenv.
 
 ## 📄 License
 
 Copyright © 2025 Francis Bain
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+---
