@@ -55,18 +55,17 @@ jobs:
           SAFE_EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$SAFE_EVENT_NAME" = "pull_request" ]; then
-            branch_or_pr="$SAFE_HEAD_REF"
-
-          # Only skip if branch is develop, main, or release/*
-          if [[ "$branch_or_pr" =~ ^(develop|main|release/.*)$ ]]; then
-            echo "Skipping JIRA key check for branch: $branch_or_pr"
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
+branch_or_pr="$SAFE_HEAD_REF"
           else
-            branch_or_pr="$SAFE_REF_NAME"
+branch_or_pr="$SAFE_REF_NAME"
           fi
+
+# Skip JIRA key check for long-lived branches
+if [[ "$branch_or_pr" =~ ^(develop|main|release/.*)$ ]]; then
+  echo "Skipping JIRA key check for branch: $branch_or_pr"
+  echo "skip=true" >> $GITHUB_OUTPUT
+  exit 0
+fi
 
           issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
 
