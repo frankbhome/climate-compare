@@ -29,11 +29,11 @@ jobs:
           transition_id=""
           event="${{ github.event_name }}"
 
-          if [[ "$event" == "push" ]]; then
+          if [ "$event" = "push" ]; then
             transition_id="21"  # In Progress
-          elif [[ "$event" == "pull_request" && "${{ github.event.action }}" == "opened" ]]; then
+          elif [ "$event" = "pull_request" && "${{ github.event.action }}" = "opened" ]; then
             transition_id="31"  # In Review
-          elif [[ "$event" == "pull_request" && "${{ github.event.action }}" == "closed" && "${{ github.event.pull_request.merged }}" == "true" ]]; then
+          elif [ "$event" = "pull_request" && "${{ github.event.action }}" = "closed" && "${{ github.event.pull_request.merged }}" = "true" ]; then
             transition_id="41"  # Done
           fi
 
@@ -42,14 +42,14 @@ jobs:
       - name: Extract JIRA issue key
         id: extract
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             branch_or_pr="${{ github.head_ref }}"
           else
             branch_or_pr="${{ github.ref_name }}"
           fi
           issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
 
-          if [[ -z "$issue_key" ]]; then
+          if [ -z "$issue_key" ]; then
             echo "No JIRA issue key found in branch or PR name. Skipping."
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
@@ -83,9 +83,9 @@ jobs:
               print(f"Request to JIRA failed: {e}, skipping transition")
               sys.exit(0)
 
-          if response.status_code == 204:
+          if response.status_code = 204:
               print(f"Transitioned {issue_key} successfully to transition ID {transition_id}!")
-          elif response.status_code == 400:
+          elif response.status_code = 400:
               print(f"Transition {transition_id} not valid for {issue_key} (likely already in that status), skipping.")
               sys.exit(0)
           else:
@@ -96,4 +96,3 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-
