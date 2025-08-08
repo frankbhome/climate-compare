@@ -38,15 +38,16 @@ jobs:
           action="$SAFE_ACTION"
           merged="$SAFE_PR_MERGED"
 
-          if [ "$event" = "push" ] && echo "$branch" | grep -qE '^(feature|bug          fix|hot          fix)/'; then
+          if [ "$event" = "push" ] && echo "$branch" | grep -qE '^(feature|bugfix|hotfix)/'; then
             transition_id="21"  # In Progress
           elif [ "$event" = "pull_request" ] && [ "$action" = "opened" ]; then
             transition_id="31"  # In Review
           elif [ "$event" = "pull_request" ] && [ "$action" = "closed" ] && [ "$merged" = "true" ]; then
             transition_id="41"  # Done
-                    fi
+          fi
 
-                    echo "transition_id=$transition_id" >> $GITHUB_OUTPUT
+          echo "transition_id=$transition_id" >> $GITHUB_OUTPUT
+
       - name: Extract JIRA issue key
         id: extract
         env:
@@ -55,12 +56,12 @@ jobs:
           SAFE_EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$SAFE_EVENT_NAME" = "pull_request" ]; then
-          branch_or_pr="$SAFE_HEAD_REF"
+            branch_or_pr="$SAFE_HEAD_REF"
           else
-          branch_or_pr="$SAFE_REF_NAME"
-                    fi
-          
-# Skip JIRA key check for long-lived branches
+            branch_or_pr="$SAFE_REF_NAME"
+          fi
+
+          # Skip JIRA key check for long-lived branches
           if [[ "$branch_or_pr" =~ ^(develop|main|release/.*)$ ]]; then
             echo "Skipping JIRA key check for branch: $branch_or_pr"
             echo "skip=true" >> $GITHUB_OUTPUT
@@ -70,13 +71,14 @@ jobs:
           issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
 
           if [ -z "$issue_key" ]; then
-                      echo "No JIRA issue key found in branch or PR name. Skipping."
-                      echo "skip=true" >> $GITHUB_OUTPUT
-                      exit 0
-                    fi
+            echo "No JIRA issue key found in branch or PR name. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
-                    echo "Found JIRA issue key: $issue_key"
-                    echo "issue_key=$issue_key" >> $GITHUB_OUTPUT
+          echo "Found JIRA issue key: $issue_key"
+          echo "issue_key=$issue_key" >> $GITHUB_OUTPUT
+
       - name: Update JIRA issue
         if: steps.extract.outputs.skip != 'true' && steps.determine.outputs.transition_id != ''
         run: |
@@ -115,4 +117,3 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-
