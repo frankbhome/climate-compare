@@ -59,7 +59,7 @@ jobs:
           else
           branch_or_pr="$SAFE_REF_NAME"
                     fi
-
+          
 # Skip JIRA key check for long-lived branches
           if [[ "$branch_or_pr" =~ ^(develop|main|release/.*)$ ]]; then
             echo "Skipping JIRA key check for branch: $branch_or_pr"
