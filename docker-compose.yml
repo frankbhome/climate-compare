@@ -1,4 +1,3 @@
-
 services:
   climate-compare:
     build: .
