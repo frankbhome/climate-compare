@@ -1,0 +1,44 @@
+---
+extends: default
+
+rules:
+  # Enforce consistent indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Limit line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Remove extra blank lines
+  empty-lines:
+    max: 1
+    level: error
+
+  # Ensure a newline at EOF
+  new-line-at-end-of-file:
+    level: error
+
+  # Disallow trailing spaces
+  trailing-spaces:
+    level: error
+
+  # Require comments to be separated by at least two spaces
+  comments:
+    min-spaces-from-content: 2
+    level: warning
+
+  # Check new line characters (LF only)
+  new-lines:
+    type: unix
+
+  # Require truthy values to be lowercase
+  truthy: disable
+
+  # Don’t enforce key ordering in YAML maps (to avoid churn in workflows)
+  key-ordering: disable
+
+  document-start: disable

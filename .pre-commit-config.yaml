@@ -1,31 +1,53 @@
 repos:
-- repo: https://github.com/psf/black
-  rev: 24.4.2
-  hooks:
-  - id: black
-- repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.4.4
-  hooks:
-  - id: ruff
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.10.0
-  hooks:
-  - id: mypy
-- repo: local
-  hooks:
-  - id: pytest
-    name: Run pytest with coverage
-    entry: python -m coverage run -m pytest
-    language: system
-    types:
-    - python
-    pass_filenames: false
-  - id: pytest-before-push
-    name: Run tests before push
-    entry: bash -c 'coverage run -m pytest && coverage report --fail-under=40'
-    language: system
-    stages:
-    - pre-push
-    types:
-    - python
-    pass_filenames: false
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest (no coverage gate on commit)
+        entry: python -m pytest --cov=. --cov-branch --cov-report=term
+        language: python
+        additional_dependencies:
+          - pytest
+          - pytest-cov
+          - coverage
+          - pandas
+          - streamlit
+          - meteostat
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest-before-push
+        name: Run tests before push (40% min)
+        entry: python -m pytest --cov=. --cov-branch --cov-report=term --cov-fail-under=40
+        language: python
+        additional_dependencies:
+          - pytest
+          - pytest-cov
+          - coverage
+          - pandas
+          - streamlit
+          - meteostat
+        stages: [pre-push]
+        types: [python]
+        pass_filenames: false
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint (YAML style + indentation)
+        args: ["--strict"]
