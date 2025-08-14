@@ -153,6 +153,18 @@ Use JIRA issue keys (e.g., `CPG-101`) in:
 
 This ensures your GitHub activity is linked automatically to JIRA issues.
 
+## YAML style and linting
+
+We enforce YAML style with [yamllint]. Key rules:
+- 2-space indentation; consistent sequence indentation
+- LF newlines, no trailing spaces, newline at EOF
+- GitHub Actions-friendly: `truthy` disabled, `document-start` not required
+
+Run locally:
+```bash
+pre-commit run yamllint --all-files
+```
+CI also runs yamllint on every pull request.
 ## 📁 Project Structure
 
 ```

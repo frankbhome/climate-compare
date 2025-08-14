@@ -1,0 +1,51 @@
+exclude: ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: check-yaml
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest (no coverage gate on commit)
+        entry: python -m pytest --cov=. --cov-branch --cov-report=term
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+      - id: pytest-before-push
+        name: Run tests before push (40% min)
+        entry: python -m pytest --cov=. --cov-branch --cov-report=term --cov-fail-under=40
+        language: system
+        stages: [pre-push]
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: yamllint (YAML style + indentation)
+        args: ["--strict"]

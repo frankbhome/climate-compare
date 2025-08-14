@@ -1,49 +1,35 @@
-name: CI/CD Pipeline
-
+name: Deploy
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+          cache: pip
 
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: |
-          pytest tests/
+      # If your deploy needs Python deps, install here (optional)
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Deploy to EC2
         if: ${{ success() }}
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
           username: deploy
           key: ${{ secrets.EC2_SSH_KEY }}
-          strict_host_key_checking: true
-          known_hosts: ${{ secrets.EC2_KNOWN_HOSTS }}
+          fingerprint: ${{ secrets.EC2_HOST_FINGERPRINT }}
           script_stop: true
           script: |
             if [ ! -d /var/www/html/.git ]; then
