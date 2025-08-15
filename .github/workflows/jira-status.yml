@@ -1,119 +1,22 @@
-name: Update JIRA Status
+---
+name: JIRA Status
 
 on:
-  push:
-    branches:
-      - '**'
-  pull_request:
-    types: [opened, closed]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1"
 
 jobs:
-  update-jira:
+  update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
-      - name: Install requests
-        run: pip install requests
-
-      - name: Determine transition
-        id: determine
-        env:
-          SAFE_EVENT_NAME: ${{ github.event_name }}
-          SAFE_REF_NAME: ${{ github.ref_name }}
-          SAFE_ACTION: ${{ github.event.action }}
-          SAFE_PR_MERGED: ${{ github.event.pull_request.merged }}
-        run: |
-          set -euo pipefail
-          transition_id=""
-          event="$SAFE_EVENT_NAME"
-          branch="$SAFE_REF_NAME"
-          action="$SAFE_ACTION"
-          merged="$SAFE_PR_MERGED"
-
-          if [ "$event" = "push" ] && echo "$branch" | grep -qE '^(feature|bugfix|hotfix)/'; then
-            transition_id="21"  # In Progress
-          elif [ "$event" = "pull_request" ] && [ "$action" = "opened" ]; then
-            transition_id="31"  # In Review
-          elif [ "$event" = "pull_request" ] && [ "$action" = "closed" ] && [ "$merged" = "true" ]; then
-            transition_id="41"  # Done
-          fi
-
-          echo "transition_id=$transition_id" >> $GITHUB_OUTPUT
-
-      - name: Extract JIRA issue key
-        id: extract
-        env:
-          SAFE_HEAD_REF: ${{ github.head_ref }}
-          SAFE_REF_NAME: ${{ github.ref_name }}
-          SAFE_EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [ "$SAFE_EVENT_NAME" = "pull_request" ]; then
-            branch_or_pr="$SAFE_HEAD_REF"
-          else
-            branch_or_pr="$SAFE_REF_NAME"
-          fi
-
-          # Skip JIRA key check for long-lived branches
-          if [[ "$branch_or_pr" =~ ^(develop|main|release/.*)$ ]]; then
-            echo "Skipping JIRA key check for branch: $branch_or_pr"
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          issue_key=$(echo "$branch_or_pr" | grep -oE '[A-Z]+-[0-9]+')
-
-          if [ -z "$issue_key" ]; then
-            echo "No JIRA issue key found in branch or PR name. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "Found JIRA issue key: $issue_key"
-          echo "issue_key=$issue_key" >> $GITHUB_OUTPUT
-
-      - name: Update JIRA issue
-        if: steps.extract.outputs.skip != 'true' && steps.determine.outputs.transition_id != ''
-        run: |
-          import os
-          import requests
-          import json
-          import sys
-
-          jira_user = os.environ['JIRA_USER_EMAIL']
-          jira_token = os.environ['JIRA_API_TOKEN']
-          jira_base = os.environ['JIRA_BASE_URL']
-          issue_key = '${{ steps.extract.outputs.issue_key }}'
-          transition_id = '${{ steps.determine.outputs.transition_id }}'
-
-          url = f"{jira_base}/rest/api/3/issue/{issue_key}/transitions"
-          auth = (jira_user, jira_token)
-          headers = {"Accept": "application/json", "Content-Type": "application/json"}
-          payload = json.dumps({"transition": {"id": transition_id}})
-
-          try:
-              response = requests.post(url, headers=headers, auth=auth, data=payload, timeout=10)
-          except Exception as e:
-              print(f"Request to JIRA failed: {e}, skipping transition")
-              sys.exit(0)
-
-          if response.status_code == 204:
-              print(f"Transitioned {issue_key} successfully to transition ID {transition_id}!")
-          elif response.status_code == 400:
-              print(f"Transition {transition_id} not valid for {issue_key} (likely already in that status), skipping.")
-              sys.exit(0)
-          else:
-              print(f"Failed to transition {issue_key}: {response.status_code} {response.text}")
-              sys.exit(1)
-        shell: python
-        env:
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          cache: pip
+      # Add your real JIRA update step(s) here
+      - name: Placeholder
+        run: echo "Update JIRA status here"

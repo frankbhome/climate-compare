@@ -1,0 +1,49 @@
+---
+extends: default
+
+rules:
+  # Enforce consistent indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Limit line length (advisory)
+  line-length:
+    max: 120
+    level: warning
+
+  # Remove extra blank lines
+  empty-lines:
+    max: 1
+    level: error
+
+  # Ensure a newline at EOF
+  new-line-at-end-of-file:
+    level: error
+
+  # Disallow trailing spaces
+  trailing-spaces:
+    level: error
+
+  # Require comments to be separated by at least two spaces
+  comments:
+    min-spaces-from-content: 2
+    level: warning
+
+  # Check new line characters (LF only)
+  new-lines:
+    type: unix
+
+  # Require canonical booleans and ignore key names (avoids GH Actions 'on')
+  truthy:
+    check-keys: false
+    allowed-values: ['true', 'false']
+    level: error
+
+  # Don’t enforce key ordering in YAML maps (to avoid churn in workflows)
+  key-ordering: disable
+
+  # Require '---' at the start of files
+  document-start:
+    present: true

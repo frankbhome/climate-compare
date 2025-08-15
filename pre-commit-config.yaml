@@ -1,6 +1,5 @@
 ---
-exclude: >-
-  ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
+exclude: ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
 
 repos:
   - repo: https://github.com/psf/black
@@ -51,4 +50,3 @@ repos:
     hooks:
       - id: yamllint
         name: yamllint (YAML style + indentation)
-        # no --strict so warnings remain advisory

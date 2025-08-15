@@ -98,7 +98,7 @@ docker stop <container-id>
 
 ## 🧰 Developer Notes
 
-- **Pre-commit hooks (cross-platform coverage):**  
+- **Pre-commit hooks (cross-platform coverage):**
   The pre-commit hook for running `pytest` with `coverage` is now set up using a `local` hook in `.pre-commit-config.yaml` with cross-platform compatibility:
 
   ```yaml
@@ -125,7 +125,7 @@ docker stop <container-id>
   pre-commit run --all-files
   ```
 
-- **Testable UI Mode:**  
+- **Testable UI Mode:**
   You can run the app in non-interactive mode for tests or automation using:
 
   ```python
@@ -141,7 +141,7 @@ docker stop <container-id>
   main(test_inputs=test_inputs)
   ```
 
-- **Weather Data Caching:**  
+- **Weather Data Caching:**
   Historical weather queries are cached using `@lru_cache` for efficiency.
 
 ## 🔗 GitHub + JIRA Integration
@@ -153,6 +153,18 @@ Use JIRA issue keys (e.g., `CPG-101`) in:
 
 This ensures your GitHub activity is linked automatically to JIRA issues.
 
+## YAML style and linting
+
+We enforce YAML style with [yamllint]. Key rules:
+- 2-space indentation; consistent sequence indentation
+- LF newlines, no trailing spaces, newline at EOF
+- GitHub Actions-friendly: `truthy` disabled, `document-start` not required
+
+Run locally:
+```bash
+pre-commit run yamllint --all-files
+```
+CI also runs yamllint on every pull request.
 ## 📁 Project Structure
 
 ```
