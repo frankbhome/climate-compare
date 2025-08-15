@@ -8,7 +8,7 @@ rules:
     indent-sequences: true
     check-multi-line-strings: false
 
-  # Limit line length
+  # Limit line length (advisory)
   line-length:
     max: 120
     level: warning
@@ -35,10 +35,15 @@ rules:
   new-lines:
     type: unix
 
-  # Require truthy values to be lowercase
-  truthy: disable
+  # Require canonical booleans and ignore key names (avoids GH Actions 'on')
+  truthy:
+    check-keys: false
+    allowed-values: ['true', 'false']
+    level: error
 
   # Don’t enforce key ordering in YAML maps (to avoid churn in workflows)
   key-ordering: disable
 
-  document-start: disable
+  # Require '---' at the start of files
+  document-start:
+    present: true

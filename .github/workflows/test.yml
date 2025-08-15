@@ -1,4 +1,6 @@
+---
 name: Test
+
 on:
   push:
     branches: [main]
@@ -21,5 +23,4 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run pytest
-        run: |
-          python -m pytest --cov=. --cov-branch --cov-report=term
+        run: python -m pytest --cov=. --cov-branch --cov-report=term

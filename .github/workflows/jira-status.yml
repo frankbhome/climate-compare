@@ -1,4 +1,6 @@
+---
 name: JIRA Status
+
 on:
   workflow_dispatch:
   schedule:

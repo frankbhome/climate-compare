@@ -1,12 +1,15 @@
 # Virtual environments
 .venv*/
 venv/
+env/
 .env
+.python-version
 
 # Python caches / build artifacts
 __pycache__/
 .pytest_cache/
 .mypy_cache/
+.cache/
 build/
 dist/
 *.pyc
