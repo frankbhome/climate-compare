@@ -1,0 +1,57 @@
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+select = [
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "W",  # warnings
+  "I",  # isort
+  "UP", # pyupgrade
+]
+ignore = ["E501"]  # let black handle line length
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+relative_files = true
+omit = [
+  "src/streamlit_app.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_empty = true
+omit = [
+  "src/streamlit_app.py",
+]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing --cov-report=html"
+testpaths = [
+  "tests",
+]
