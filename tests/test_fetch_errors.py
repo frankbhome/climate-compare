@@ -1,6 +1,8 @@
 # tests/test_fetch_errors.py
 import datetime as dt
+
 import pandas as pd
+
 import src.fetch as fetch
 
 
@@ -12,9 +14,13 @@ def _maybe_setattr(obj, name, value, monkeypatch):
 
 def test_get_historical_weather_timeout(monkeypatch):
     """Force a TimeoutError from the underlying fetch to hit the timeout handler."""
+
     class _DailyBoom:
-        def __init__(self, *a, **k): pass
-        def fetch(self): raise TimeoutError("simulated timeout")
+        def __init__(self, *a, **k):
+            pass
+
+        def fetch(self):
+            raise TimeoutError("simulated timeout")
 
     # Some implementations use Daily, others Hourly – patch whichever exists.
     _maybe_setattr(fetch, "Daily", _DailyBoom, monkeypatch)
@@ -30,9 +36,13 @@ def test_get_historical_weather_timeout(monkeypatch):
 
 def test_get_historical_weather_generic_exception(monkeypatch):
     """Force a generic exception to hit the broad exception handler."""
+
     class _DailyBoom:
-        def __init__(self, *a, **k): pass
-        def fetch(self): raise RuntimeError("kaboom")
+        def __init__(self, *a, **k):
+            pass
+
+        def fetch(self):
+            raise RuntimeError("kaboom")
 
     _maybe_setattr(fetch, "Daily", _DailyBoom, monkeypatch)
     _maybe_setattr(fetch, "Hourly", _DailyBoom, monkeypatch)

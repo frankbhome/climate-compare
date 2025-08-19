@@ -1,54 +1,45 @@
----
-exclude: >-
-  ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
-
 repos:
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 25.1.0
     hooks:
       - id: black
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.12.9
     hooks:
       - id: ruff
+        args: [--fix]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.17.1
     hooks:
       - id: mypy
+        additional_dependencies: []
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: mixed-line-ending
-        args: ["--fix=lf"]
       - id: check-yaml
 
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+
+  # Use a local pytest hook so we don't rely on a remote repo manifest.
   - repo: local
     hooks:
       - id: pytest
-        name: Run pytest (no coverage gate on commit)
-        entry: python -m pytest --cov=. --cov-branch --cov-report=term
-        language: system
-        types: [python]
+        name: pytest (with coverage)
+        entry: pytest
+        language: system   # use your current venv
         pass_filenames: false
-        always_run: true
-
-      - id: pytest-before-push
-        name: Run tests before push (40% min)
-        entry: python -m pytest --cov=. --cov-branch --cov-report=term --cov-fail-under=40
-        language: system
-        stages: [pre-push]
-        types: [python]
-        pass_filenames: false
-        always_run: true
-
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        name: yamllint (YAML style + indentation)
-        # no --strict so warnings remain advisory
+        args:
+          - --cov=src
+          - --cov-branch
+          - --cov-report=term
+          - --cov-report=html
+          - --cov-fail-under=85

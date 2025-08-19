@@ -1,16 +1,53 @@
 [tool.black]
 line-length = 88
-target-version = ["py312"]
-
-[tool.isort]
-profile = "black"
-line_length = 88
+target-version = ["py311"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
-# Remove W503 if it's invalid; Ruff handles line breaks differently
-ignore = ["E203"]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+relative_files = true
+omit = [
+  "src/streamlit_app.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_empty = true
+omit = [
+  "src/streamlit_app.py",
+]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-report=term-missing --cov-report=html"
+testpaths = [
+  "tests",
+]
