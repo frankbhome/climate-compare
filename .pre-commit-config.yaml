@@ -1,3 +1,6 @@
+exclude: >-
+  ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
+
 repos:
   - repo: https://github.com/psf/black
     rev: 25.1.0

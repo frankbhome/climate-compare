@@ -1,25 +1,27 @@
-import math
 import pandas as pd
 
 from src.formatters import (
+    COLUMN_MAP,
     build_user_view,
     deg_to_compass,
     to_kmh,
-    COLUMN_MAP,
 )
+
 
 def test_deg_to_compass_basic():
     assert deg_to_compass(0) == "N"
-    assert deg_to_compass(359) == "N"   # wrap-around
+    assert deg_to_compass(359) == "N"  # wrap-around
     assert deg_to_compass(90) == "E"
     assert deg_to_compass(225) == "SW"
     assert deg_to_compass(None) == "—"
     assert deg_to_compass(float("nan")) == "—"
 
+
 def test_to_kmh_none_and_numeric():
     assert to_kmh(None) is None
     assert isinstance(to_kmh(10), float)
     assert to_kmh(10) == 10.0  # adjust if you later enable m/s -> km/h conversion
+
 
 def test_build_user_view_full_mapping_and_formats():
     # Build a small raw dataframe with realistic columns (including NaNs)
@@ -90,9 +92,20 @@ def test_build_user_view_full_mapping_and_formats():
     assert "help" in col_cfg["Average Temperature (°C)"]
     assert col_cfg["Average Temperature (°C)"]["format"] == "%.1f"
 
+
 def test_column_map_is_consistent():
     # Ensure mapping includes all expected raw keys
     keys = {
-        "time","tavg","tmin","tmax","prcp","snow","wdir","wspd","wpgt","pres","tsun"
+        "time",
+        "tavg",
+        "tmin",
+        "tmax",
+        "prcp",
+        "snow",
+        "wdir",
+        "wspd",
+        "wpgt",
+        "pres",
+        "tsun",
     }
     assert keys.issubset(set(COLUMN_MAP.keys()))

@@ -1,9 +1,7 @@
 # src/formatters.py
 # Utilities to convert a raw weather dataframe into a layperson-friendly table.
 from __future__ import annotations
-from typing import Optional, Union
 
-import math
 import pandas as pd
 
 # Mapping from raw column names to layperson-friendly labels
@@ -23,36 +21,51 @@ COLUMN_MAP: dict[str, str] = {
 
 # 16-wind compass rose labels
 COMPASS = [
-    "N","NNE","NE","ENE","E","ESE","SE","SSE",
-    "S","SSW","SW","WSW","W","WNW","NW","NNW"
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
 ]
 
-def _is_nan(x) -> bool:
-    try:
-        return x is None or (isinstance(x, float) and math.isnan(x))
-    except Exception:
-        return False
 
-def deg_to_compass(deg: Optional[Union[float, int]]) -> str:
+def _is_na(x) -> bool:
+    # Handles None, numpy.nan, pandas.NA uniformly
+    return pd.isna(x)
+
+
+def deg_to_compass(deg: float | int | None) -> str:
     """Convert wind direction in degrees to a 16-point compass label."""
-    if _is_nan(deg):
+    if _is_na(deg):
         return "—"
-    assert deg is not None
-    deg_f: float = float(deg)  # safe after guard
+    # Safe to cast now; modulo protects out-of-range values
+    deg_f = float(deg)  # type: ignore[arg-type]
     idx = int((deg_f % 360) / 22.5 + 0.5) % 16
     return COMPASS[idx]
 
-def to_kmh(x: Optional[Union[float, int]]) -> Optional[float]:
+
+def to_kmh(x: float | int | None) -> float | None:
     """Convert wind speed to km/h if needed.
     If your data is already km/h, just return x.
-    If it's m/s, uncomment the conversion.
+    If it's m/s, apply *3.6 (uncomment below).
     """
-    if _is_nan(x):
+    if _is_na(x):
         return None
-    assert x is not None
-    xf: float = float(x)  # safe after guard
+    xf = float(x)  # type: ignore[arg-type]
     # return xf * 3.6  # <- enable if your source is m/s
     return xf
+
 
 def build_user_view(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Return (user_friendly_df, column_config_meta)."""
@@ -60,10 +73,13 @@ def build_user_view(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     # Parse & format date
     if "time" in out.columns:
-        out["time"] = pd.to_datetime(out["time"], errors="coerce").dt.strftime("%b %d, %Y")
+        out["time"] = pd.to_datetime(out["time"], errors="coerce").dt.strftime(
+            "%b %d, %Y"
+        )
 
-    # Rounding
-    for c in ["tavg", "tmin", "tmax", "prcp", "snow", "pres", "tsun"]:
+    # Rounding for numeric columns (preserve NA where present)
+    num_cols = ["tavg", "tmin", "tmax", "prcp", "snow", "pres", "tsun"]
+    for c in num_cols:
         if c in out.columns:
             out[c] = pd.to_numeric(out[c], errors="coerce").round(1)
 
@@ -81,23 +97,24 @@ def build_user_view(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         out["Wind"] = out.apply(
             lambda r: (
                 f'{deg_to_compass(r.get("wdir"))} • '
-                f'avg {("—" if _is_nan(r.get("wspd")) else r.get("wspd"))} km/h • '
-                f'gust {("—" if _is_nan(r.get("wpgt")) else r.get("wpgt"))} km/h'
+                f'avg {("—" if _is_na(r.get("wspd")) else r.get("wspd"))} km/h • '
+                f'gust {("—" if _is_na(r.get("wpgt")) else r.get("wpgt"))} km/h'
             ),
             axis=1,
         )
 
-    # Replace None/NaN with em dash for display
-    out = out.replace({None: "—"})
-    out = out.fillna("—")
+    # Replace NA with em dash for display
+    out = out.where(~out.isna(), other="—")
 
     # Rename columns to friendly labels
     out = out.rename(columns=COLUMN_MAP)
 
     # Optionally drop detailed wind columns (kept summarized in "Wind")
-    drop_cols = [COLUMN_MAP.get("wdir", "wdir"),
-                 COLUMN_MAP.get("wspd", "wspd"),
-                 COLUMN_MAP.get("wpgt", "wpgt")]
+    drop_cols = [
+        COLUMN_MAP.get("wdir", "wdir"),
+        COLUMN_MAP.get("wspd", "wspd"),
+        COLUMN_MAP.get("wpgt", "wpgt"),
+    ]
     for dc in drop_cols:
         if dc in out.columns and "Wind" in out.columns:
             out = out.drop(columns=[dc])
@@ -105,13 +122,31 @@ def build_user_view(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     # Column config metadata for Streamlit
     col_cfg = {
         "Date": {"help": "Date of the observation"},
-        "Average Temperature (°C)": {"help": "Mean temperature for the day", "format": "%.1f"},
-        "Lowest Temperature (°C)": {"help": "Coldest temperature recorded", "format": "%.1f"},
-        "Highest Temperature (°C)": {"help": "Warmest temperature recorded", "format": "%.1f"},
-        "Rainfall (mm)": {"help": "Total precipitation (rain/snow water equivalent)", "format": "%.1f"},
+        "Average Temperature (°C)": {
+            "help": "Mean temperature for the day",
+            "format": "%.1f",
+        },
+        "Lowest Temperature (°C)": {
+            "help": "Coldest temperature recorded",
+            "format": "%.1f",
+        },
+        "Highest Temperature (°C)": {
+            "help": "Warmest temperature recorded",
+            "format": "%.1f",
+        },
+        "Rainfall (mm)": {
+            "help": "Total precipitation (rain/snow water equivalent)",
+            "format": "%.1f",
+        },
         "Snowfall (mm)": {"help": "Total snowfall depth", "format": "%.1f"},
-        "Air Pressure (hPa)": {"help": "Atmospheric pressure at sea level", "format": "%.1f"},
-        "Sunshine Duration (hours)": {"help": "Total hours of bright sunshine", "format": "%.1f"},
+        "Air Pressure (hPa)": {
+            "help": "Atmospheric pressure at sea level",
+            "format": "%.1f",
+        },
+        "Sunshine Duration (hours)": {
+            "help": "Total hours of bright sunshine",
+            "format": "%.1f",
+        },
         "Wind": {"help": "Compass direction, average speed, and maximum gust (km/h)"},
     }
     return out, col_cfg
