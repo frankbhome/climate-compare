@@ -1,218 +1,216 @@
-# Adjust sys.path for interactive Streamlit runs
-import os
-import sys
+# src/streamlit_app.py
+from __future__ import annotations
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+from datetime import date, datetime, timedelta
 
-# Standard library imports
-from datetime import datetime
-
-# Third-party imports
+import pandas as pd
 import streamlit as st
 
-# Local application imports
-from src.fetch import get_historical_weather
+# --- Imports ---
+try:
+    from src.fetch import get_historical_weather
+except Exception:
+    from fetch import get_historical_weather  # type: ignore
+
+try:
+    from src.formatters import COLUMN_MAP, build_user_view
+except Exception:
+    from formatters import COLUMN_MAP, build_user_view  # type: ignore
+
+st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
+st.title("Weather History")
+st.caption("View of historical weather data")
 
 
-def main(test_inputs=None):
-    """
-    Run the Streamlit application.
-    If test_inputs is provided, use those instead of user input widgets
-    (for headless/test mode).
-    """
-    setup_page()
-    if test_inputs is not None:
-        # Use provided test inputs directly (for headless/test mode)
-        handle_data_fetching(test_inputs)
-    else:
-        # Use the widget-based user input function
-        inputs = get_user_inputs()
-        handle_data_fetching(inputs)
+# --- Small helper: toggle/checkbox compat ---
+def ui_toggle(
+    label: str, value: bool = False, key: str | None = None, help: str | None = None
+) -> bool:
+    if hasattr(st, "toggle"):
+        return st.toggle(label, value=value, key=key, help=help)
+    return st.checkbox(label, value=value, key=key, help=help)
 
 
-def setup_page():
-    """Setup the page title and description."""
-    st.title("🌦️ Climate Compare")
-    st.subheader("Visualize and compare historical weather data")
+# --- Location helpers ---
+PRESETS = {
+    "Edinburgh, UK": (55.9533, -3.1883),
+    "London, UK": (51.5074, -0.1278),
+    "Glasgow, UK": (55.8642, -4.2518),
+    "Belfast, UK": (54.5973, -5.9301),
+    "Manchester, UK": (53.4808, -2.2426),
+}
 
 
-def get_user_inputs():
-    """Get and validate user inputs."""
-    # --- Inputs ---
-    lat = st.number_input(
-        "Latitude",
-        value=55.9533,
-        min_value=-90.0,
-        max_value=90.0,
-        help=("Latitude coordinate (-90 to 90). Default: Edinburgh, Scotland"),
-    )
-    lon = st.number_input(
-        "Longitude",
-        value=-3.1883,
-        min_value=-180.0,
-        max_value=180.0,
-        help=("Longitude coordinate (-180 to 180). Default: Edinburgh, Scotland"),
-    )
-    from datetime import date
-
-    start_date = st.date_input("Start Date", value=date(2023, 1, 1))
-    end_date = st.date_input("End Date", value=date(2023, 1, 15))
-
-    # Calculate the date range in days
-    date_range = (end_date - start_date).days
-
-    # Warn if date range is too large
-    if date_range > 30:
-        st.warning(
-            f"Selected date range is {date_range} days. "
-            "Large date ranges may result in slower performance."
-        )
-    # Validate date range
-    if end_date < start_date:
-        st.warning("End date was before start date. Dates have been swapped.")
-        start_date, end_date = end_date, start_date
-
-    return {"lat": lat, "lon": lon, "start_date": start_date, "end_date": end_date}
+def parse_location(text: str) -> tuple[float, float] | None:
+    text = (text or "").strip()
+    if text in PRESETS:
+        return PRESETS[text]
+    # Support "lat,lon"
+    if "," in text:
+        try:
+            lat_str, lon_str = (p.strip() for p in text.split(",", 1))
+            return float(lat_str), float(lon_str)
+        except Exception:
+            return None
+    # Fallback to preset Edinburgh
+    return PRESETS["Edinburgh, UK"]
 
 
-def handle_data_fetching(inputs):
-    """Handle data fetching and visualization."""
-    # Debug: log when this function is called
-    import os
-
-    with open("app_debug.log", "a", encoding="utf-8") as f:
-        f.write(f"handle_data_fetching called with: {inputs}\n")
-    # In test mode, always fetch data (no button)
-    if os.environ.get("STREAMLIT_HEADLESS") == "1":
-        # Headless/test mode: always fetch
-        data = fetch_weather_data(inputs)
-        if data is None:
-            return
-        if hasattr(data, "empty") and data.empty:
-            with open("app_debug.log", "a", encoding="utf-8") as f:
-                f.write("No data found for the selected location or date range.\n")
-        else:
-            with open("app_debug.log", "a", encoding="utf-8") as f:
-                f.write(f"Found {len(data)} days of data.\n")
-    else:
-        # Only run the button logic if not in headless mode
-        if hasattr(st, "button"):
-            if st.button("Fetch and Plot Weather Data"):
-                with st.spinner("Fetching data..."):
-                    data = fetch_weather_data(inputs)
-                    if data is None:
-                        return
-                if data.empty:
-                    st.warning("No data found for the selected location or date range.")
-                else:
-                    st.success(f"Found {len(data)} days of data.")
-                    st.dataframe(data)
-                    visualize_weather_data(data)
+# --- Sidebar ---
+with st.sidebar:
+    st.header("Filters")
+    # Friendly location input with preset examples
+    loc_hint = "e.g., 'Edinburgh, UK' or '55.95,-3.19'"
+    location_text = st.text_input("Location", value="Edinburgh, UK", help=loc_hint)
+    today = date.today()
+    default_start = today - timedelta(days=9)
+    start_date = st.date_input("Start date", value=default_start)
+    end_date = st.date_input("End date", value=today)
+    advanced_mode = ui_toggle("Show advanced meteorological table", value=False)
+    st.markdown("---")
+    st.markdown("ℹ️ Enter a city from the presets or a pair of coordinates 'lat,lon'.")
 
 
-def fetch_weather_data(inputs):
-    """Fetch weather data with error handling.
+# --- Load data ---
+def _to_datetime(d) -> datetime:
+    if isinstance(d, datetime):
+        return d
+    if isinstance(d, date):
+        return datetime(d.year, d.month, d.day)
+    return datetime.fromisoformat(str(d))
 
-    Uses a timeout parameter to prevent the request from hanging indefinitely.
-    """
+
+@st.cache_data(show_spinner=True)
+def _load_data(location_text: str, start: date, end: date) -> pd.DataFrame:
+    latlon = parse_location(location_text)
+    if not latlon:
+        return pd.DataFrame()
+    lat, lon = latlon
+    start_dt = _to_datetime(start)
+    end_dt = _to_datetime(end)
+    if end_dt < start_dt:
+        start_dt, end_dt = end_dt, start_dt
+    df = get_historical_weather(lat, lon, start_dt, end_dt)
+    if df is None:
+        return pd.DataFrame()
+    # Ensure 'time' column exists (Meteostat returns DatetimeIndex)
+    if "time" not in df.columns and isinstance(df.index, pd.DatetimeIndex):
+        df = df.reset_index()
+        # Meteostat usually returns the datetime index as a column named "time" after reset_index().
+        # If it's not named "time", rename the first datetime64 column to "time".
+        if "time" not in df.columns:
+            for c in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[c]):
+                    df = df.rename(columns={c: "time"})
+                    break
+        # After reset_index, the datetime index column is named 'time' by meteostat already,
+        # but if it's named 'time', leave as-is; else, rename to 'time' explicitly.
+        if "time" not in df.columns:
+            # detect the datetime column
+            for c in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[c]):
+                    df = df.rename(columns={c: "time"})
+                    break
+    return df
+
+
+with st.spinner("Loading weather data…"):
     try:
-        # Debug: log input parameters
-        with open("app_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"fetch_weather_data called with: {inputs}\n")
-        data = get_historical_weather(
-            inputs["lat"],
-            inputs["lon"],
-            datetime.combine(inputs["start_date"], datetime.min.time()),
-            datetime.combine(inputs["end_date"], datetime.min.time()),
-        )
-        # Debug: log data shape/info
-        with open("app_debug.log", "a", encoding="utf-8") as f:
-            if data is not None:
-                f.write(f"Fetched data shape: {getattr(data, 'shape', None)}\n")
-                f.write(f"Fetched data head: {getattr(data, 'head', lambda: None)()}\n")
-            else:
-                f.write("Fetched data is None\n")
-        return data
-    except TimeoutError:
-        st.error(
-            "Request timed out. Please try again or check your internet connection."
-        )
-        # Debug: log timeout
-        with open("app_debug.log", "a", encoding="utf-8") as f:
-            f.write("TimeoutError occurred in fetch_weather_data\n")
+        raw_df = _load_data(location_text, start_date, end_date)
     except Exception as e:
-        st.error(f"Error fetching data: {str(e)}")
-        # Debug: log exception
-        with open("app_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"Exception in fetch_weather_data: {e}\n")
-        return None
+        st.error(f"Failed to load data: {e}")
+        st.stop()
 
+if raw_df.empty:
+    st.info("No data returned for the selected period.")
+    st.stop()
 
-def visualize_weather_data(data):
-    """Create and display visualizations for weather data."""
-    import pandas as pd
-    import plotly.express as px
-    import streamlit as st
+# Build the user-friendly table (this may contain '—' strings)
+user_df, col_cfg_meta = build_user_view(raw_df)
 
-    # --- Metric selection widget ---
-    metric_columns = [col for col in data.columns if col != "time"]
-    if not metric_columns:
-        st.error("No valid metric columns found in the data.")
-        return
-
-    default_index = 0
-    if "tavg" in metric_columns:
-        default_index = metric_columns.index("tavg")
-
-    selected_metric = st.selectbox(
-        "Select metric to plot:", metric_columns, index=default_index
-    )
-
-    # --- Ensure data index is datetime ---
-    try:
-        data.index = pd.to_datetime(data.index, errors="coerce")
-    except Exception as e:
-        st.error(f"Failed to convert index to datetime: {e}")
-        return
-
-    if not isinstance(data.index, pd.DatetimeIndex):
-        st.error("Data index is not a DatetimeIndex. Please check input format.")
-        return
-
-    if data.index.hasnans:
-        st.warning("Some rows have invalid timestamps and will be dropped.")
-        data = data[~data.index.isna()]
-
-    if data.empty:
-        st.error("No valid data to display after processing timestamps.")
-        return
-
-    # --- Warn about missing values in selected metric ---
-    if data[selected_metric].isna().any():
-        st.warning(
-            f"Selected metric '{selected_metric}' contains missing values "
-            "which may affect visualization."
+# Prepare a *display* copy with consistent string types to avoid Arrow warnings
+display_df = user_df.copy()
+# For any column that still has mixed types (float + string), cast everything to string
+for col in display_df.columns:
+    if display_df[col].dtype == "O":  # object, likely mixed
+        display_df[col] = display_df[col].apply(
+            lambda v: (
+                "—"
+                if (
+                    v is None
+                    or (isinstance(v, float) and pd.isna(v))
+                    or (isinstance(v, str) and v.strip() == "")
+                )
+                else str(v)
+            )
         )
 
-    # --- Plot the selected metric ---
-    fig = px.line(
-        data,
-        x=data.index,
-        y=selected_metric,
-        title=f"Daily {selected_metric} over Time",
-        labels={
-            selected_metric: selected_metric.replace("_", " ").title(),
-            "x": "Date",
-        },
-        markers=True,
-    )
-    fig.update_layout(
-        xaxis_title="Date",
-        yaxis_title=selected_metric.replace("_", " ").title(),
-        hovermode="x unified",
-    )
-    st.plotly_chart(fig)
+# Sort newest first by Date for display
+if "Date" in display_df.columns:
+    tmp = pd.to_datetime(display_df["Date"], errors="coerce")
+    display_df = display_df.loc[tmp.sort_values(ascending=False).index]
 
+# Render table
+st.subheader("Daily summary")
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+)
 
-if __name__ == "__main__":
-    main()
+# --- Graph view (numeric only) --------------------------------------------
+st.subheader("Graphs")
+# Build a numeric chart DataFrame directly from raw_df
+chart_df = raw_df.copy()
+# Ensure time column
+if "time" not in chart_df.columns and isinstance(chart_df.index, pd.DatetimeIndex):
+    chart_df = chart_df.reset_index()
+# Rename for nice axis labels but keep numerics intact
+chart_df = chart_df.rename(columns=COLUMN_MAP)
+if "Date" not in chart_df.columns and "time" in chart_df.columns:
+    chart_df["Date"] = pd.to_datetime(chart_df["time"], errors="coerce")
+    chart_df = chart_df.drop(columns=["time"])
+
+if "Date" in chart_df.columns:
+    chart_df = chart_df.sort_values("Date")
+
+    # Temperature lines
+    temp_cols = [
+        c
+        for c in [
+            "Average Temperature (°C)",
+            "Lowest Temperature (°C)",
+            "Highest Temperature (°C)",
+        ]
+        if c in chart_df.columns
+    ]
+    if temp_cols:
+        st.line_chart(chart_df.set_index("Date")[temp_cols])
+
+    with st.expander("More charts"):
+        # Rainfall
+        if "Rainfall (mm)" in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[["Rainfall (mm)"]])
+        # Sunshine
+        if "Sunshine Duration (hours)" in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[["Sunshine Duration (hours)"]])
+        # Air Pressure
+        if "Air Pressure (hPa)" in chart_df.columns:
+            st.line_chart(chart_df.set_index("Date")[["Air Pressure (hPa)"]])
+
+# --- Advanced table --------------------------------------------------------
+if advanced_mode:
+    st.subheader("Advanced table (technical columns)")
+    st.dataframe(raw_df.reset_index(), use_container_width=True, hide_index=True)
+    with st.expander("Column legend"):
+        st.markdown(
+            "- **time** — timestamp of observation\n"
+            "- **tavg / tmin / tmax** — average / minimum / maximum temperature (°C)\n"
+            "- **prcp** — total precipitation (mm)\n"
+            "- **snow** — snowfall (mm)\n"
+            "- **wdir** — wind direction (degrees, 0 = North)\n"
+            "- **wspd** — average wind speed (km/h or m/s depending on source)\n"
+            "- **wpgt** — maximum wind gust (km/h or m/s depending on source)\n"
+            "- **pres** — air pressure (hPa)\n"
+            "- **tsun** — sunshine duration (hours)\n"
+        )
