@@ -1,10 +1,13 @@
+# Copyright (c) 2025 Francis Bain
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../src"))
 
 project = "Climate Compare"
-author = "Auto-Generated"
+author = "Francis Bain"
 release = "0.1"
 
 extensions = [

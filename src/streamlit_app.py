@@ -1,6 +1,10 @@
+# Copyright (c) 2025 Francis Bain
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # src/streamlit_app.py
 from __future__ import annotations
 
+import os
 from datetime import date, datetime, timedelta
 
 import pandas as pd
@@ -9,13 +13,13 @@ import streamlit as st
 # --- Imports ---
 try:
     from src.fetch import get_historical_weather
-except Exception:
+except ImportError:
     from fetch import get_historical_weather  # type: ignore
 
 try:
-    from src.formatters import COLUMN_MAP, build_user_view
-except Exception:
-    from formatters import COLUMN_MAP, build_user_view  # type: ignore
+    from src.formatters import METRIC_DISPLAY_MAP, build_user_view
+except ImportError:
+    from formatters import METRIC_DISPLAY_MAP, build_user_view  # type: ignore
 
 st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
 st.title("Weather History")
@@ -41,7 +45,7 @@ PRESETS = {
 }
 
 
-def parse_location(text: str) -> tuple[float, float] | None:
+def parse_location(text: str) -> tuple[float, float]:
     text = (text or "").strip()
     if text in PRESETS:
         return PRESETS[text]
@@ -51,7 +55,17 @@ def parse_location(text: str) -> tuple[float, float] | None:
             lat_str, lon_str = (p.strip() for p in text.split(",", 1))
             return float(lat_str), float(lon_str)
         except Exception:
-            return None
+            # Fall back to a sensible default instead of returning None so the
+            # UI can continue to show data. Surface a warning to the user.
+            try:
+                st.warning(
+                    "Invalid coordinates entered; falling back to Edinburgh, UK."
+                )
+            except Exception:
+                # If Streamlit isn't available in this runtime, ignore the
+                # warning call and continue returning the default.
+                pass
+            return PRESETS["Edinburgh, UK"]
     # Fallback to preset Edinburgh
     return PRESETS["Edinburgh, UK"]
 
@@ -80,7 +94,12 @@ def _to_datetime(d) -> datetime:
     return datetime.fromisoformat(str(d))
 
 
-@st.cache_data(show_spinner=True)
+# Cache TTL (seconds) for historical data; configurable via env var
+# Default: 86400 seconds = 1 day
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "86400"))
+
+
+@st.cache_data(show_spinner=True, ttl=CACHE_TTL_SECONDS)
 def _load_data(location_text: str, start: date, end: date) -> pd.DataFrame:
     latlon = parse_location(location_text)
     if not latlon:
@@ -118,7 +137,13 @@ with st.spinner("Loading weather data…"):
     try:
         raw_df = _load_data(location_text, start_date, end_date)
     except Exception as e:
+        # Show a short error message and a full traceback expandable in the UI
         st.error(f"Failed to load data: {e}")
+        try:
+            st.exception(e)
+        except Exception:
+            # If Streamlit API differs in this environment, ignore and continue
+            pass
         st.stop()
 
 if raw_df.empty:
@@ -166,7 +191,7 @@ chart_df = raw_df.copy()
 if "time" not in chart_df.columns and isinstance(chart_df.index, pd.DatetimeIndex):
     chart_df = chart_df.reset_index()
 # Rename for nice axis labels but keep numerics intact
-chart_df = chart_df.rename(columns=COLUMN_MAP)
+chart_df = chart_df.rename(columns=METRIC_DISPLAY_MAP)
 if "Date" not in chart_df.columns and "time" in chart_df.columns:
     chart_df["Date"] = pd.to_datetime(chart_df["time"], errors="coerce")
     chart_df = chart_df.drop(columns=["time"])
@@ -174,29 +199,25 @@ if "Date" not in chart_df.columns and "time" in chart_df.columns:
 if "Date" in chart_df.columns:
     chart_df = chart_df.sort_values("Date")
 
-    # Temperature lines
-    temp_cols = [
-        c
-        for c in [
-            "Average Temperature (°C)",
-            "Lowest Temperature (°C)",
-            "Highest Temperature (°C)",
-        ]
-        if c in chart_df.columns
-    ]
+    # Temperature lines using the shared display-name mapping
+    temp_labels = [METRIC_DISPLAY_MAP.get(k, k) for k in ["tavg", "tmin", "tmax"]]
+    temp_cols = [c for c in temp_labels if c in chart_df.columns]
     if temp_cols:
         st.line_chart(chart_df.set_index("Date")[temp_cols])
 
     with st.expander("More charts"):
         # Rainfall
-        if "Rainfall (mm)" in chart_df.columns:
-            st.bar_chart(chart_df.set_index("Date")[["Rainfall (mm)"]])
+        prcp_label = METRIC_DISPLAY_MAP.get("prcp", "prcp")
+        if prcp_label in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[[prcp_label]])
         # Sunshine
-        if "Sunshine Duration (hours)" in chart_df.columns:
-            st.bar_chart(chart_df.set_index("Date")[["Sunshine Duration (hours)"]])
+        tsun_label = METRIC_DISPLAY_MAP.get("tsun", "tsun")
+        if tsun_label in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[[tsun_label]])
         # Air Pressure
-        if "Air Pressure (hPa)" in chart_df.columns:
-            st.line_chart(chart_df.set_index("Date")[["Air Pressure (hPa)"]])
+        pres_label = METRIC_DISPLAY_MAP.get("pres", "pres")
+        if pres_label in chart_df.columns:
+            st.line_chart(chart_df.set_index("Date")[[pres_label]])
 
 # --- Advanced table --------------------------------------------------------
 if advanced_mode:

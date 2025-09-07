@@ -2,13 +2,14 @@
 
 [![CI](https://github.com/frankbhome/climate-compare/actions/workflows/ci.yml/badge.svg)](https://github.com/frankbhome/climate-compare/actions/workflows/ci.yml)
 [![Tests](https://github.com/frankbhome/climate-compare/actions/workflows/test.yml/badge.svg)](https://github.com/frankbhome/climate-compare/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/frankbhome/climate-compare/branch/develop/graph/badge.svg)](https://codecov.io/gh/frankbhome/climate-compare)
+[![codecov](https://codecov.io/gh/frankbhome/climate-compare/branch/main/graph/badge.svg)](https://codecov.io/gh/frankbhome/climate-compare/tree/main)
 
 > Fetch and visualize weather station data (live + historical) for environmental insight and comparison.
 
 ## 🔍 Project Overview
 
 `climate-compare` is a lightweight Streamlit app that allows users to:
+
 - Retrieve historical weather data using the [Meteostat](https://dev.meteostat.net/) API
 - Visualize data using interactive Plotly charts
 - Compare climate patterns over time or location
@@ -36,8 +37,8 @@ sudo apt install -y libjpeg-dev zlib1g-dev
 These are needed for image processing support via Pillow and other dependencies.
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate   # or `venv\Scripts\activate` on Windows
+python3 -m venv .venv
+source .venv/bin/activate   # or `.venv\Scripts\activate` on Windows
 pip install -r requirements.txt
 ```
 
@@ -52,7 +53,7 @@ streamlit run src/streamlit_app.py
 Tests are written with `pytest`. To run:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 
@@ -81,6 +82,7 @@ docker-compose up --build
 Then open your browser to: <http://localhost:8501>
 
 ### 🔄 Auto Reloading
+
 If you're actively developing, the docker-compose.yml mounts your local source code into the container. Just edit files locally and reload the browser.
 
 ### 🧹 Clean Up
@@ -119,7 +121,7 @@ docker stop <container-id>
   source .venv/bin/activate
 
   # On Windows PowerShell
-  .\.venv\Scripts\Activate
+  .\.venv\Scripts\activate
 
   pre-commit install
   pre-commit run --all-files
@@ -147,6 +149,7 @@ docker stop <container-id>
 ## 🔗 GitHub + JIRA Integration
 
 Use JIRA issue keys (e.g., `CPG-101`) in:
+
 - Branch names: `feature/CPG-101`
 - Commits: `CPG-101: Update README.md with setup instructions`
 - PR titles: `CPG-101: Update README for project setup`
@@ -156,18 +159,22 @@ This ensures your GitHub activity is linked automatically to JIRA issues.
 ## YAML style and linting
 
 We enforce YAML style with [yamllint]. Key rules:
+
 - 2-space indentation; consistent sequence indentation
 - LF newlines, no trailing spaces, newline at EOF
-- GitHub Actions-friendly: `truthy` disabled, `document-start` not required
+- Canonical booleans are enforced ("true"/"false") and the YAML document start marker (`---`) is required
 
 Run locally:
+
 ```bash
 pre-commit run yamllint --all-files
 ```
+
 CI also runs yamllint on every pull request.
+
 ## 📁 Project Structure
 
-```
+```text
 climate-compare/
 │
 ├── src/
@@ -207,6 +214,6 @@ This makes `pre-commit` available in all Git environments (e.g. VS Code, GitHub 
 
 Copyright © 2025 Francis Bain
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+This project is licensed under the [GPL-3.0-or-later](https://opensource.org/license/gpl-3-0).
 
 ---

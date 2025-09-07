@@ -1,17 +1,10 @@
 # Core app and runtime libraries
-pandas>=2.1.0,<3.0.0
-requests==2.31.0
-plotly==5.18.0
+# Keep versions compatible with Python 3.10–3.12 (CI matrix) and each other.
+pandas>=2.1,<3.0
+numpy>=1.26,<2.0
+requests>=2.31,<3.0
+plotly>=5.18,<6.0
 meteostat==1.6.5
-numpy>=1.26.0,<2.0.0
-streamlit==1.24.0
+streamlit>=1.24,<2.0
 
-# Dev tools
-bandit>=1.7.7,<2.0.0
-black>=25.0.0,<26.0.0
-coverage>=7.4.4,<8.0.0
-isort>=5.13.0,<6.0.0
-mypy>=1.8.0,<2.0.0
-pre-commit>=4.0.0,<5.0.0
-pytest>=8.0.0,<9.0.0
-ruff>=0.4.0,<1.0.0
+# Development tools have been moved to requirements-dev.txt
