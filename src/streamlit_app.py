@@ -8,14 +8,23 @@ import streamlit as st
 
 # --- Imports ---
 try:
-    from src.fetch import get_historical_weather
+    from src.fetch import get_historical_weather, get_cache_info, clear_weather_cache, warm_cache_for_common_locations
 except Exception:
-    from fetch import get_historical_weather  # type: ignore
+    from fetch import get_historical_weather, get_cache_info, clear_weather_cache, warm_cache_for_common_locations  # type: ignore
 
 try:
     from src.formatters import COLUMN_MAP, build_user_view
 except Exception:
     from formatters import COLUMN_MAP, build_user_view  # type: ignore
+
+try:
+    from src.cache_config import get_cache_config, STREAMLIT_CACHE_TTL, ENABLE_CACHE_STATS
+except Exception:
+    # Fallback values if cache_config is not available
+    STREAMLIT_CACHE_TTL = 3600
+    ENABLE_CACHE_STATS = True
+    def get_cache_config():
+        return {"cache_stats_available": False}
 
 st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
 st.title("Weather History")
@@ -67,6 +76,38 @@ with st.sidebar:
     start_date = st.date_input("Start date", value=default_start)
     end_date = st.date_input("End date", value=today)
     advanced_mode = ui_toggle("Show advanced meteorological table", value=False)
+    
+    # Cache monitoring section
+    if ENABLE_CACHE_STATS:
+        st.markdown("---")
+        st.markdown("**Cache Performance**")
+        if st.button("🔄 Refresh Cache Stats", help="Update cache statistics"):
+            try:
+                cache_info = get_cache_info()
+                hit_rate = cache_info["hits"] / (cache_info["hits"] + cache_info["misses"]) * 100 if (cache_info["hits"] + cache_info["misses"]) > 0 else 0
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Hit Rate", f"{hit_rate:.1f}%")
+                    st.metric("Cache Size", f"{cache_info['currsize']}/{cache_info['maxsize']}")
+                with col2:
+                    st.metric("Hits", cache_info["hits"])
+                    st.metric("Misses", cache_info["misses"])
+                    
+                if st.button("🗑️ Clear Cache", help="Clear weather data cache"):
+                    clear_weather_cache()
+                    st.success("Cache cleared!")
+                    st.rerun()
+                    
+                if st.button("🔥 Warm Cache", help="Pre-load common locations"):
+                    with st.spinner("Warming cache..."):
+                        results = warm_cache_for_common_locations()
+                        successful = sum(1 for v in results.values() if v == "success")
+                        total = len(results)
+                        st.success(f"Cache warmed! {successful}/{total} locations loaded.")
+            except Exception as e:
+                st.error(f"Cache stats unavailable: {e}")
+    
     st.markdown("---")
     st.markdown("ℹ️ Enter a city from the presets or a pair of coordinates 'lat,lon'.")
 
@@ -80,7 +121,7 @@ def _to_datetime(d) -> datetime:
     return datetime.fromisoformat(str(d))
 
 
-@st.cache_data(show_spinner=True)
+@st.cache_data(show_spinner=True, ttl=STREAMLIT_CACHE_TTL)
 def _load_data(location_text: str, start: date, end: date) -> pd.DataFrame:
     latlon = parse_location(location_text)
     if not latlon:

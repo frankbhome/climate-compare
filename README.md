@@ -142,7 +142,12 @@ docker stop <container-id>
   ```
 
 - **Weather Data Caching:**
-  Historical weather queries are cached using `@lru_cache` for efficiency.
+  Historical weather queries are cached using `@lru_cache` for efficiency. The application now features:
+  - Configurable cache sizes (default: 512 weather entries, 256 compass entries)
+  - Cache performance monitoring with hit/miss statistics
+  - Cache warming for common locations
+  - Environment variable configuration for cache behavior
+  - See [docs/CACHING.md](docs/CACHING.md) for detailed configuration options
 
 ## 🔗 GitHub + JIRA Integration
 

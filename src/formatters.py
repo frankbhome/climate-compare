@@ -2,7 +2,15 @@
 # Utilities to convert a raw weather dataframe into a layperson-friendly table.
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pandas as pd
+
+try:
+    from .cache_config import COMPASS_CACHE_SIZE
+except ImportError:
+    # Fallback if cache_config is not available
+    COMPASS_CACHE_SIZE = 256
 
 # Mapping from raw column names to layperson-friendly labels
 COLUMN_MAP: dict[str, str] = {
@@ -45,6 +53,7 @@ def _is_na(x) -> bool:
     return pd.isna(x)
 
 
+@lru_cache(maxsize=COMPASS_CACHE_SIZE)
 def deg_to_compass(deg: float | int | None) -> str:
     """Convert wind direction in degrees to a 16-point compass label."""
     if _is_na(deg):
