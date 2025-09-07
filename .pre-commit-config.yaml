@@ -1,3 +1,4 @@
+---
 exclude: >-
   ^(\.venv.*|venv|\.tox|\.eggs|node_modules|dist|build|__pycache__|\.pytest_cache|\.mypy_cache)/
 
@@ -17,7 +18,8 @@ repos:
     rev: v1.17.1
     hooks:
       - id: mypy
-        additional_dependencies: []
+        additional_dependencies:
+          - types-requests==2.32.4.20250809
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -32,13 +34,12 @@ repos:
     hooks:
       - id: yamllint
 
-  # Use a local pytest hook so we don't rely on a remote repo manifest.
   - repo: local
     hooks:
       - id: pytest
         name: pytest (with coverage)
         entry: pytest
-        language: system   # use your current venv
+        language: system
         pass_filenames: false
         args:
           - --cov=src
@@ -46,3 +47,11 @@ repos:
           - --cov-report=term
           - --cov-report=html
           - --cov-fail-under=85
+
+  - repo: local
+    hooks:
+      - id: update-copyright-headers
+        name: Update copyright headers
+        entry: python scripts/update_copyright_headers.py
+        language: system
+        types: [python]

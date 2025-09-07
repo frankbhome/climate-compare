@@ -15,3 +15,5 @@ mypy>=1.8.0,<2.0.0
 pre-commit>=4.0.0,<5.0.0
 pytest>=8.0.0,<9.0.0
 ruff>=0.4.0,<1.0.0
+types-requests==2.32.4.20250809
+pytest-cov==4.1.0

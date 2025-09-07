@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Francis Bain
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from datetime import datetime
 from unittest.mock import ANY, patch
 

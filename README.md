@@ -207,6 +207,6 @@ This makes `pre-commit` available in all Git environments (e.g. VS Code, GitHub 
 
 Copyright © 2025 Francis Bain
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+This project is licensed under the [GPLv3](https://opensource.org/license/gpl-3-0).
 
 ---

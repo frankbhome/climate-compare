@@ -38,7 +38,7 @@ rules:
   # Require canonical booleans and ignore key names (avoids GH Actions 'on')
   truthy:
     check-keys: false
-    allowed-values: ['true', 'false']
+    allowed-values: ["true", "false"]
     level: error
 
   # Don’t enforce key ordering in YAML maps (to avoid churn in workflows)
