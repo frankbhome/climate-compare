@@ -17,9 +17,9 @@ except ImportError:
     from fetch import get_historical_weather  # type: ignore
 
 try:
-    from src.formatters import COLUMN_MAP, build_user_view
+    from src.formatters import METRIC_DISPLAY_MAP, build_user_view
 except ImportError:
-    from formatters import COLUMN_MAP, build_user_view  # type: ignore
+    from formatters import METRIC_DISPLAY_MAP, build_user_view  # type: ignore
 
 st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
 st.title("Weather History")
@@ -191,7 +191,7 @@ chart_df = raw_df.copy()
 if "time" not in chart_df.columns and isinstance(chart_df.index, pd.DatetimeIndex):
     chart_df = chart_df.reset_index()
 # Rename for nice axis labels but keep numerics intact
-chart_df = chart_df.rename(columns=COLUMN_MAP)
+chart_df = chart_df.rename(columns=METRIC_DISPLAY_MAP)
 if "Date" not in chart_df.columns and "time" in chart_df.columns:
     chart_df["Date"] = pd.to_datetime(chart_df["time"], errors="coerce")
     chart_df = chart_df.drop(columns=["time"])
@@ -199,29 +199,25 @@ if "Date" not in chart_df.columns and "time" in chart_df.columns:
 if "Date" in chart_df.columns:
     chart_df = chart_df.sort_values("Date")
 
-    # Temperature lines
-    temp_cols = [
-        c
-        for c in [
-            "Average Temperature (°C)",
-            "Lowest Temperature (°C)",
-            "Highest Temperature (°C)",
-        ]
-        if c in chart_df.columns
-    ]
+    # Temperature lines using the shared display-name mapping
+    temp_labels = [METRIC_DISPLAY_MAP.get(k, k) for k in ["tavg", "tmin", "tmax"]]
+    temp_cols = [c for c in temp_labels if c in chart_df.columns]
     if temp_cols:
         st.line_chart(chart_df.set_index("Date")[temp_cols])
 
     with st.expander("More charts"):
         # Rainfall
-        if "Rainfall (mm)" in chart_df.columns:
-            st.bar_chart(chart_df.set_index("Date")[["Rainfall (mm)"]])
+        prcp_label = METRIC_DISPLAY_MAP.get("prcp", "prcp")
+        if prcp_label in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[[prcp_label]])
         # Sunshine
-        if "Sunshine Duration (hours)" in chart_df.columns:
-            st.bar_chart(chart_df.set_index("Date")[["Sunshine Duration (hours)"]])
+        tsun_label = METRIC_DISPLAY_MAP.get("tsun", "tsun")
+        if tsun_label in chart_df.columns:
+            st.bar_chart(chart_df.set_index("Date")[[tsun_label]])
         # Air Pressure
-        if "Air Pressure (hPa)" in chart_df.columns:
-            st.line_chart(chart_df.set_index("Date")[["Air Pressure (hPa)"]])
+        pres_label = METRIC_DISPLAY_MAP.get("pres", "pres")
+        if pres_label in chart_df.columns:
+            st.line_chart(chart_df.set_index("Date")[[pres_label]])
 
 # --- Advanced table --------------------------------------------------------
 if advanced_mode:

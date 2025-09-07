@@ -53,7 +53,7 @@ streamlit run src/streamlit_app.py
 Tests are written with `pytest`. To run:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 
@@ -174,7 +174,7 @@ CI also runs yamllint on every pull request.
 
 ## 📁 Project Structure
 
-```
+```text
 climate-compare/
 │
 ├── src/

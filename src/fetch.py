@@ -16,7 +16,7 @@ DateLike = date | datetime
 
 
 @lru_cache(maxsize=128)
-def get_historical_weather(
+def _get_historical_weather_cached(
     lat: float, lon: float, start: DateLike, end: DateLike
 ) -> pd.DataFrame | None:
     """
@@ -59,8 +59,8 @@ def get_historical_weather(
 
         location = Point(lat_f, lon_f)
         df = Daily(location, start_dt, end_dt).fetch()
-        # Defensive copy to keep cache returns immutable for callers
-        return df.copy(deep=True)
+        # Return the raw DataFrame from the cached helper; caller will copy
+        return df
 
     except TimeoutError:
         logger.exception("Timeout while fetching weather for lat=%s lon=%s", lat, lon)
@@ -78,3 +78,29 @@ def get_historical_weather(
             "Unexpected error fetching weather for lat=%s lon=%s", lat, lon
         )
         return None
+
+
+def get_historical_weather(
+    lat: float, lon: float, start: DateLike, end: DateLike
+) -> pd.DataFrame | None:
+    """
+    Public wrapper that returns a fresh copy of the cached DataFrame so callers
+    don't share a mutable instance.
+
+    Returns None on error, else a deep-copied DataFrame.
+    """
+    df = _get_historical_weather_cached(lat, lon, start, end)
+    return None if df is None else df.copy(deep=True)
+
+
+# Expose cache helpers for tests and callers that need to invalidate the cache
+try:
+    # These attributes are added by functools.lru_cache
+    get_historical_weather.cache_clear = (  # type: ignore[attr-defined]
+        _get_historical_weather_cached.cache_clear
+    )
+    get_historical_weather.cache_info = (  # type: ignore[attr-defined]
+        _get_historical_weather_cached.cache_info
+    )
+except Exception:  # pragma: no cover - defensive
+    pass

@@ -10,20 +10,27 @@ from typing import Any
 
 import pandas as pd
 
-# Exported mapping used by tests
+# Exported single source of truth for display names (friendly labels)
+# Keys: raw metric column names from Meteostat; Values: UI-friendly labels
+# Note: We deliberately leave some technical columns (e.g., time, wdir/wspd/wpgt)
+# mapped to their raw names because they are not directly displayed in the
+# user table and are consumed for computations or advanced views.
 COLUMN_MAP: dict[str, str] = {
     "time": "time",
-    "tavg": "tavg",
-    "tmin": "tmin",
-    "tmax": "tmax",
-    "prcp": "prcp",
-    "snow": "snow",
+    "tavg": "Average Temperature (°C)",
+    "tmin": "Lowest Temperature (°C)",
+    "tmax": "Highest Temperature (°C)",
+    "prcp": "Rainfall (mm)",
+    "snow": "Snowfall (mm)",
     "wdir": "wdir",
     "wspd": "wspd",
     "wpgt": "wpgt",
-    "pres": "pres",
-    "tsun": "tsun",
+    "pres": "Air Pressure (hPa)",
+    "tsun": "Sunshine Duration (hours)",
 }
+
+# Backwards-compatible alias for clarity in UI/chart code
+METRIC_DISPLAY_MAP: dict[str, str] = COLUMN_MAP
 
 
 def deg_to_compass(deg: float | None) -> str:
@@ -66,8 +73,8 @@ def wind_summary_series(wdir: pd.Series, wspd: pd.Series, wpgt: pd.Series) -> pd
     # Compass labels for 8 sectors
     labels = {0: "N", 1: "NE", 2: "E", 3: "SE", 4: "S", 5: "SW", 6: "W", 7: "NW"}
 
-    # Compute sector index (0-7) handling NaN
-    sector = ((wdir_s.mod(360).fillna(0) + 22.5) // 45).astype("Int64") % 8
+    # Compute sector index (0-7); let NaN propagate so missing stays missing
+    sector = ((wdir_s.mod(360) + 22.5) // 45).astype("Int64") % 8
     dir_series = sector.map(labels).fillna("—")
 
     # Format speeds; replace NaN with em dash
@@ -99,15 +106,8 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
         except Exception:
             return "—"
 
-    mapping = {
-        "tavg": "Average Temperature (°C)",
-        "tmin": "Lowest Temperature (°C)",
-        "tmax": "Highest Temperature (°C)",
-        "prcp": "Rainfall (mm)",
-        "snow": "Snowfall (mm)",
-        "pres": "Air Pressure (hPa)",
-        "tsun": "Sunshine Duration (hours)",
-    }
+    # Displayable metrics and their friendly labels come from COLUMN_MAP
+    display_keys = ["tavg", "tmin", "tmax", "prcp", "snow", "pres", "tsun"]
 
     out = pd.DataFrame()
     # Ensure the time column is datetime-typed before using .dt
@@ -123,8 +123,10 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
     formatted_dates = time_series.dt.strftime("%b %d, %Y").fillna("—")
     out["Date"] = formatted_dates
 
-    for raw_col, display_col in mapping.items():
-        out[display_col] = [fmt_num(v) for v in df[raw_col]]
+    for raw_col in display_keys:
+        if raw_col in df.columns:
+            display_col = COLUMN_MAP.get(raw_col, raw_col)
+            out[display_col] = [fmt_num(v) for v in df[raw_col]]
 
     def wind_summary(wdir: Any, wspd: Any, wpgt: Any) -> str:
         dir_s = deg_to_compass(wdir)
@@ -142,7 +144,8 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
     ]
 
     col_cfg: dict[str, Any] = {}
-    for display_col in mapping.values():
+    for key in display_keys:
+        display_col = COLUMN_MAP.get(key, key)
         # These columns may contain the em dash "—" for missing values
         # so render them as strings to avoid numeric-formatting errors.
         col_cfg[display_col] = {"help": "", "format": "%s"}
@@ -152,8 +155,10 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
     return out, col_cfg
 
 
-# Exercise the module at import time to ensure coverage tools execute all branches.
-# This produces no external side-effects and only constructs local objects.
+# Optional self-test helper used by coverage locally.
+# NOTE: This function is defined but not executed on import. To run it,
+# set environment variable EXERCISE_FORMATTERS=1 before importing this module.
+# This avoids allocating DataFrames during normal imports.
 def _exercise_module() -> None:
     # deg_to_compass branches
     _ = deg_to_compass(0)
@@ -186,5 +191,6 @@ def _exercise_module() -> None:
     _ = build_user_view(None)
 
 
-if os.getenv("EXERCISE_MODULE") == "1":
+# Run the self-test only when explicitly enabled via env var.
+if os.getenv("EXERCISE_FORMATTERS") == "1":
     _exercise_module()
