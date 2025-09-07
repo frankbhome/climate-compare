@@ -13,3 +13,7 @@ __pycache__/
 build/
 dist/
 *.pyc
+
+# Database files
+*.db
+climate_data.db
