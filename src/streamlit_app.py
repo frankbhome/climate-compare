@@ -17,6 +17,11 @@ try:
 except Exception:
     from formatters import COLUMN_MAP, build_user_view  # type: ignore
 
+try:
+    from src.trend_analysis import add_trend_lines_to_chart_data, get_trend_summary
+except Exception:
+    from trend_analysis import add_trend_lines_to_chart_data, get_trend_summary  # type: ignore
+
 st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
 st.title("Weather History")
 st.caption("View of historical weather data")
@@ -165,6 +170,14 @@ chart_df = raw_df.copy()
 # Ensure time column
 if "time" not in chart_df.columns and isinstance(chart_df.index, pd.DatetimeIndex):
     chart_df = chart_df.reset_index()
+    # After reset_index, the datetime index becomes a column. If it's not named 'time', rename it
+    if "time" not in chart_df.columns:
+        # Find the datetime column and rename it
+        for col in chart_df.columns:
+            if pd.api.types.is_datetime64_any_dtype(chart_df[col]):
+                chart_df = chart_df.rename(columns={col: "time"})
+                break
+
 # Rename for nice axis labels but keep numerics intact
 chart_df = chart_df.rename(columns=COLUMN_MAP)
 if "Date" not in chart_df.columns and "time" in chart_df.columns:
@@ -174,7 +187,13 @@ if "Date" not in chart_df.columns and "time" in chart_df.columns:
 if "Date" in chart_df.columns:
     chart_df = chart_df.sort_values("Date")
 
-    # Temperature lines
+    # Add trend lines to the data
+    chart_df = add_trend_lines_to_chart_data(chart_df)
+    
+    # Get trend summary for display
+    trend_summary = get_trend_summary(chart_df)
+
+    # Temperature lines with trends
     temp_cols = [
         c
         for c in [
@@ -184,8 +203,52 @@ if "Date" in chart_df.columns:
         ]
         if c in chart_df.columns
     ]
+    
+    # Add trend line columns
+    trend_cols = [f"{c} Trend" for c in temp_cols if f"{c} Trend" in chart_df.columns]
+    
     if temp_cols:
-        st.line_chart(chart_df.set_index("Date")[temp_cols])
+        # Display the temperature chart with both original data and trend lines
+        chart_data = chart_df.set_index("Date")[temp_cols + trend_cols]
+        st.line_chart(chart_data)
+        
+        # Display trend analysis summary
+        if trend_summary:
+            st.subheader("Climate Trend Analysis")
+            
+            for temp_col in temp_cols:
+                if temp_col in trend_summary:
+                    trend_info = trend_summary[temp_col]
+                    
+                    # Create columns for better layout
+                    col1, col2, col3 = st.columns([1, 1, 2])
+                    
+                    with col1:
+                        st.metric(
+                            label=f"{temp_col.split(' ')[0]} Trend",
+                            value=trend_info['trend_direction'].title(),
+                            delta=f"{trend_info['slope'] * 365.25:.2f}°C/year" if abs(trend_info['slope'] * 365.25) > 0.01 else "Stable"
+                        )
+                    
+                    with col2:
+                        st.metric(
+                            label="Correlation",
+                            value=f"{trend_info['r_value']:.3f}",
+                            delta="Strong" if abs(trend_info['r_value']) > 0.7 else "Moderate" if abs(trend_info['r_value']) > 0.4 else "Weak"
+                        )
+                    
+                    with col3:
+                        # Determine emoji based on trend
+                        if trend_info['trend_direction'] == 'warming':
+                            emoji = "🔥" if trend_info['p_value'] < 0.05 else "🌡️"
+                        elif trend_info['trend_direction'] == 'cooling':
+                            emoji = "❄️" if trend_info['p_value'] < 0.05 else "🌡️"
+                        else:
+                            emoji = "📊"
+                        
+                        st.write(f"{emoji} {trend_info['trend_description']}")
+                    
+                    st.divider()
 
     with st.expander("More charts"):
         # Rainfall

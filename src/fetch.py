@@ -5,7 +5,14 @@ from datetime import date, datetime
 from functools import lru_cache
 
 import pandas as pd
-from meteostat import Daily, Point
+try:
+    from meteostat import Daily, Point
+except ImportError:
+    # Fallback to mock for testing/development
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from mock_meteostat import Daily, Point
 
 logger = logging.getLogger(__name__)
 DateLike = date | datetime
