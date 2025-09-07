@@ -41,12 +41,13 @@ repos:
         entry: pytest
         language: system
         pass_filenames: false
+        stages: [pre-push]
         args:
           - --cov=src
           - --cov-branch
           - --cov-report=term
           - --cov-report=html
-          - --cov-fail-under=85
+          - --cov-fail-under=95
 
   - repo: local
     hooks:

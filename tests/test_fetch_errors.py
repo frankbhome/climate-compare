@@ -4,6 +4,8 @@
 # tests/test_fetch_errors.py
 import datetime as dt
 
+import pytest
+
 import src.fetch as fetch
 
 
@@ -12,42 +14,33 @@ def _maybe_setattr(obj, name, value, monkeypatch):
         monkeypatch.setattr(obj, name, value, raising=True)
 
 
-def test_get_historical_weather_timeout(monkeypatch):
-    """Force a TimeoutError from the underlying fetch to hit the timeout handler."""
+@pytest.mark.parametrize(
+    "exc_cls,msg",
+    [
+        (TimeoutError, "simulated timeout"),
+        (RuntimeError, "kaboom"),
+    ],
+)
+def test_get_historical_weather_handles_exceptions(monkeypatch, exc_cls, msg):
+    """get_historical_weather should return None when underlying fetch raises.
+
+    This single parametrized test covers both TimeoutError and generic RuntimeError
+    cases by monkeypatching either `Daily` or `Hourly` implementation to a
+    dummy that raises the requested exception.
+    """
     # Ensure we don't hit a previous cached value
     fetch.get_historical_weather.cache_clear()
 
-    class _DailyBoom:
+    class _Boom:
         def __init__(self, *a, **k):
             pass
 
         def fetch(self):
-            raise TimeoutError("simulated timeout")
+            raise exc_cls(msg)
 
-    # Some implementations use Daily, others Hourly – patch whichever exists.
-    _maybe_setattr(fetch, "Daily", _DailyBoom, monkeypatch)
-    _maybe_setattr(fetch, "Hourly", _DailyBoom, monkeypatch)
-
-    out = fetch.get_historical_weather(
-        55.95, -3.19, dt.date(2023, 1, 1), dt.date(2023, 1, 2)
-    )
-    assert out is None
-
-
-def test_get_historical_weather_generic_exception(monkeypatch):
-    """Force a generic exception to hit the broad exception handler."""
-    # Ensure we don't hit a previous cached value
-    fetch.get_historical_weather.cache_clear()
-
-    class _DailyBoom:
-        def __init__(self, *a, **k):
-            pass
-
-        def fetch(self):
-            raise RuntimeError("kaboom")
-
-    _maybe_setattr(fetch, "Daily", _DailyBoom, monkeypatch)
-    _maybe_setattr(fetch, "Hourly", _DailyBoom, monkeypatch)
+    # Patch whichever implementation exists in this environment
+    _maybe_setattr(fetch, "Daily", _Boom, monkeypatch)
+    _maybe_setattr(fetch, "Hourly", _Boom, monkeypatch)
 
     out = fetch.get_historical_weather(
         55.95, -3.19, dt.date(2023, 1, 1), dt.date(2023, 1, 2)

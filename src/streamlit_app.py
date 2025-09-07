@@ -4,6 +4,7 @@
 # src/streamlit_app.py
 from __future__ import annotations
 
+import os
 from datetime import date, datetime, timedelta
 
 import pandas as pd
@@ -12,12 +13,12 @@ import streamlit as st
 # --- Imports ---
 try:
     from src.fetch import get_historical_weather
-except Exception:
+except ImportError:
     from fetch import get_historical_weather  # type: ignore
 
 try:
     from src.formatters import COLUMN_MAP, build_user_view
-except Exception:
+except ImportError:
     from formatters import COLUMN_MAP, build_user_view  # type: ignore
 
 st.set_page_config(page_title="Climate Compare – Weather History", layout="wide")
@@ -44,7 +45,7 @@ PRESETS = {
 }
 
 
-def parse_location(text: str) -> tuple[float, float] | None:
+def parse_location(text: str) -> tuple[float, float]:
     text = (text or "").strip()
     if text in PRESETS:
         return PRESETS[text]
@@ -54,7 +55,17 @@ def parse_location(text: str) -> tuple[float, float] | None:
             lat_str, lon_str = (p.strip() for p in text.split(",", 1))
             return float(lat_str), float(lon_str)
         except Exception:
-            return None
+            # Fall back to a sensible default instead of returning None so the
+            # UI can continue to show data. Surface a warning to the user.
+            try:
+                st.warning(
+                    "Invalid coordinates entered; falling back to Edinburgh, UK."
+                )
+            except Exception:
+                # If Streamlit isn't available in this runtime, ignore the
+                # warning call and continue returning the default.
+                pass
+            return PRESETS["Edinburgh, UK"]
     # Fallback to preset Edinburgh
     return PRESETS["Edinburgh, UK"]
 
@@ -83,7 +94,12 @@ def _to_datetime(d) -> datetime:
     return datetime.fromisoformat(str(d))
 
 
-@st.cache_data(show_spinner=True)
+# Cache TTL (seconds) for historical data; configurable via env var
+# Default: 86400 seconds = 1 day
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "86400"))
+
+
+@st.cache_data(show_spinner=True, ttl=CACHE_TTL_SECONDS)
 def _load_data(location_text: str, start: date, end: date) -> pd.DataFrame:
     latlon = parse_location(location_text)
     if not latlon:
@@ -121,7 +137,13 @@ with st.spinner("Loading weather data…"):
     try:
         raw_df = _load_data(location_text, start_date, end_date)
     except Exception as e:
+        # Show a short error message and a full traceback expandable in the UI
         st.error(f"Failed to load data: {e}")
+        try:
+            st.exception(e)
+        except Exception:
+            # If Streamlit API differs in this environment, ignore and continue
+            pass
         st.stop()
 
 if raw_df.empty:

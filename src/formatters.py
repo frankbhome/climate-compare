@@ -5,6 +5,7 @@
 # Utilities to convert a raw weather dataframe into a layperson-friendly table.
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import pandas as pd
@@ -51,6 +52,35 @@ def to_kmh(value: float | None) -> float | None:
         return None
 
 
+def wind_summary_series(wdir: pd.Series, wspd: pd.Series, wpgt: pd.Series) -> pd.Series:
+    """Vectorized wind summary builder returning a Series of strings.
+
+    Produces strings like: "NW • avg 21.9 km/h • gust 50.5 km/h".
+    Missing values are replaced with an em dash.
+    """
+    # Ensure numeric series, coerce errors to NaN
+    wdir_s = pd.to_numeric(wdir, errors="coerce")
+    wspd_s = pd.to_numeric(wspd, errors="coerce")
+    wpgt_s = pd.to_numeric(wpgt, errors="coerce")
+
+    # Compass labels for 8 sectors
+    labels = {0: "N", 1: "NE", 2: "E", 3: "SE", 4: "S", 5: "SW", 6: "W", 7: "NW"}
+
+    # Compute sector index (0-7) handling NaN
+    sector = ((wdir_s.mod(360).fillna(0) + 22.5) // 45).astype("Int64") % 8
+    dir_series = sector.map(labels).fillna("—")
+
+    # Format speeds; replace NaN with em dash
+    avg = wspd_s.round(1)
+    gust = wpgt_s.round(1)
+
+    avg_str = avg.map(lambda v: f"{v:.1f} km/h" if pd.notna(v) else "—")
+    gust_str = gust.map(lambda v: f"{v:.1f} km/h" if pd.notna(v) else "—")
+
+    # Combine into final string
+    return dir_series.str.cat([" • avg ", avg_str, " • gust ", gust_str])
+
+
 def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, Any]]:
     """
     Build a user-facing DataFrame (readable headers, formatted numbers/dates)
@@ -80,7 +110,18 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
     }
 
     out = pd.DataFrame()
-    out["Date"] = df["time"].dt.strftime("%b %d, %Y")
+    # Ensure the time column is datetime-typed before using .dt
+    time_series = df.get("time")
+    if time_series is None:
+        # Missing time column -> create a placeholder of NaT values
+        time_series = pd.Series([pd.NaT] * len(df))
+
+    if not pd.api.types.is_datetime64_any_dtype(time_series):
+        time_series = pd.to_datetime(time_series, errors="coerce")
+
+    # Format dates and replace missing/NaT with an em dash
+    formatted_dates = time_series.dt.strftime("%b %d, %Y").fillna("—")
+    out["Date"] = formatted_dates
 
     for raw_col, display_col in mapping.items():
         out[display_col] = [fmt_num(v) for v in df[raw_col]]
@@ -102,7 +143,9 @@ def build_user_view(df: pd.DataFrame | None) -> tuple[pd.DataFrame, dict[str, An
 
     col_cfg: dict[str, Any] = {}
     for display_col in mapping.values():
-        col_cfg[display_col] = {"help": "", "format": "%.1f"}
+        # These columns may contain the em dash "—" for missing values
+        # so render them as strings to avoid numeric-formatting errors.
+        col_cfg[display_col] = {"help": "", "format": "%s"}
     col_cfg["Date"] = {"help": "Date of observation", "format": "%b %d, %Y"}
     col_cfg["Wind"] = {"help": "Wind summary", "format": "%s"}
 
@@ -143,4 +186,5 @@ def _exercise_module() -> None:
     _ = build_user_view(None)
 
 
-_exercise_module()
+if os.getenv("EXERCISE_MODULE") == "1":
+    _exercise_module()

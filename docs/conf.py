@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../src"))
 
 project = "Climate Compare"
-author = "Auto-Generated"
+author = "Francis Bain"
 release = "0.1"
 
 extensions = [
