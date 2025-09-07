@@ -10,6 +10,7 @@
 
 `climate-compare` is a lightweight Streamlit app that allows users to:
 - Retrieve historical weather data using the [Meteostat](https://dev.meteostat.net/) API
+- Store weather data locally in a SQLite database for faster access and offline use
 - Visualize data using interactive Plotly charts
 - Compare climate patterns over time or location
 
@@ -144,6 +145,26 @@ docker stop <container-id>
 - **Weather Data Caching:**
   Historical weather queries are cached using `@lru_cache` for efficiency.
 
+- **Database Storage:**
+  Weather data is automatically stored in a local SQLite database (`climate_data.db`) for faster access and offline use. Use `python manage_db.py info` to see what data is stored.
+
+- **Database Management:**
+  Use the `manage_db.py` script to manage your local weather database:
+
+  ```bash
+  # Show database information
+  python manage_db.py info
+  
+  # List all locations with data
+  python manage_db.py locations
+  
+  # Initialize a fresh database
+  python manage_db.py init
+  
+  # Clean up duplicate records
+  python manage_db.py clean
+  ```
+
 ## 🔗 GitHub + JIRA Integration
 
 Use JIRA issue keys (e.g., `CPG-101`) in:
@@ -171,11 +192,15 @@ CI also runs yamllint on every pull request.
 climate-compare/
 │
 ├── src/
-│   ├── fetch.py             # Weather data fetch logic
+│   ├── database.py           # Database backend for climate data
+│   ├── fetch.py             # Weather data fetch logic (with database integration)
 │   └── streamlit_app.py     # Web UI and visualization
 │
 ├── tests/                   # Unit tests
+├── docs/                    # Documentation
+│   └── database.md         # Database system documentation
 ├── .github/                 # GitHub Actions workflows
+├── manage_db.py            # Database management CLI tool
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── pyproject.toml
