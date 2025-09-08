@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Francis Bain
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from __future__ import annotations
 
 import logging
@@ -59,3 +62,4 @@ def get_historical_weather(
             "Unexpected error fetching weather for lat=%s lon=%s", lat, lon
         )
         return None
+      

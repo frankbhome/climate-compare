@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Francis Bain
+# SPDX-License-Identifier: GPL-3.0-or-later
 # src/streamlit_app.py
 from __future__ import annotations
 
@@ -277,3 +279,4 @@ if advanced_mode:
             "- **pres** — air pressure (hPa)\n"
             "- **tsun** — sunshine duration (hours)\n"
         )
+ 
